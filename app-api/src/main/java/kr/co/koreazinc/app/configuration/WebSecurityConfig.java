@@ -39,7 +39,11 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return CoreSecurityConfigurerAdapter.init(http, (security) -> {
             security.authorizeHttpRequests(request -> CoreSecurityConfigurerAdapter.Request
-                    .init(request).requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                    .init(request).requestMatchers("/swagger-ui/**"
+                    								, "/api-docs/**"
+                    								, "/api/auth/**"
+                    								, "/api/me"
+                    								, "/oauth/**").permitAll()
                     .anyRequest().access(accessChecker));
 
             security.addFilterAt(tokenAuthenticationFilter(), BasicAuthenticationFilter.class);

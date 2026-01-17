@@ -1,9 +1,9 @@
 temp:
   datasource: # DB 접속정보
-    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    jdbc-url: jdbc:log4jdbc:sqlserver://172.15.100.102:1433;databaseName=IAMS
-    username: sys_iams
-    password: iams!@345
+    driver-class-name: org.postgresql.Driver
+    jdbc-url: jdbc:postgresql://172.20.27.116:5432/testdb?sslmode=disable
+    username: testuser
+    password: 1234
     connection-timeout: 30000
     max-lifetime: 30000
     maximum-pool-size: 10
@@ -39,6 +39,10 @@ temp:
         # 빈 엔터티의 경우 null아닌 객체로 반환
         create_empty_composites:
           enabled: false
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
     hibernate:
       ddl-auto: none
       # create: 기존테이블 삭제 후 다시 생성 (DROP + CREATE)

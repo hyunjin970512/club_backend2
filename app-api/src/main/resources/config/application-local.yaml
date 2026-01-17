@@ -1,5 +1,5 @@
 server:
-  port: 11000
+  port: 8081
 
 springdoc:
   api-docs:
@@ -13,3 +13,10 @@ spring:
       enabled: false
     restart:
       enabled: true
+
+oauth:
+  client-id: 79983b8b-d229-4da3-b615-3cc4d23372b5
+  login-url: https://auth-dev.koreazinc.co.kr/oauth2/login
+  token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
+  userinfo-url: https://auth-dev.koreazinc.co.kr/v2/user/me
+  redirect-uri: http://localhost:8081/oauth/callback
