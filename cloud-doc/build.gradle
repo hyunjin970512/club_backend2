@@ -1,0 +1,9 @@
+dependencies {
+    api "org.springdoc:springdoc-openapi-starter-webmvc-ui"
+    api "org.springdoc:springdoc-openapi-starter-webflux-ui"
+    api "org.springdoc:springdoc-openapi-starter-webmvc-api"
+    api "org.springdoc:springdoc-openapi-starter-webflux-api"
+}
+
+bootJar {enabled = false}
+jar {enabled = true}

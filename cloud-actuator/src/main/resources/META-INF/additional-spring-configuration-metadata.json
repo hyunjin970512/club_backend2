@@ -1,0 +1,13 @@
+{"properties": [
+  {
+    "name": "health.server",
+    "type": "java.util.List",
+    "description": ""
+  },
+  {
+    "name": "pyroscope",
+    "type": "java.lang.Object",
+    "description": "Configuration properties for Pyroscope profiling.",
+    "sourceType": "kr.co.koreazinc.actuator.profile.PyroscopeProperties"
+  }
+]}

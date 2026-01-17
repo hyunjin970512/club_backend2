@@ -1,0 +1,22 @@
+# https://springdoc.org
+springdoc:
+  # Fully Qualified Name 사용 여부
+  use-fqn: true
+  # Type 기본값 설정(Object)
+  explicit-object-schema: true
+  api-docs:
+    enabled: false
+    # Json 형식의 OpenAPI 설명서의 사용자 지정 경로
+    path: /api-docs
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  cache:
+    disabled: true
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui
+    # Tag 정렬 방법
+    tags-sorter: alpha
+    # API 정렬 방법
+    operations-sorter: alpha
+    disable-swagger-default-url: true

@@ -1,0 +1,5 @@
+// public.der 생성
+openssl x509 -in Wildcard.koreazinc.co.kr.crt -pubkey -noout -out public.pem
+openssl rsa -pubin -in public.pem -outform DER -out public.der
+// private.der 생성
+openssl rsa -in private.key -outform DER -out private.der

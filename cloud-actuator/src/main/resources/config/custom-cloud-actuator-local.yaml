@@ -1,0 +1,33 @@
+logging:
+  config: classpath:logback-spring-actuator.xml
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      base-path: /actuator
+      exposure:
+        include: health, prometheus
+    jmx:
+      exposure:
+        exclude: "*"
+  health:
+    diskSpace:
+      enabled: false
+    ping:
+      enabled: false
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    prometheus:
+      enabled: true
+  tracing:
+    enabled: false
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+pyroscope:
+  enabled: false

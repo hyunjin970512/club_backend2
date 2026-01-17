@@ -1,0 +1,7 @@
+dependencies {
+    api "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client"
+    implementation "com.github.ben-manes.caffeine:caffeine"
+}
+
+bootJar {enabled = false}
+jar {enabled = true}

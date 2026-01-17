@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:lang="${#locale.language}">
+  <head>
+    <meta charset="UTF-8">
+    <title>서버 오류</title>
+  </head>
+  <body>
+    <h1>서버 오류</h1>
+    <p>서버에서 오류가 발생했습니다.</p>
+    <p th:text="${#strings.defaultString(error.message, #messages.msg('exception.default'))}"></p>
+  </body>
+</html>

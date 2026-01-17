@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "server.ajp",
+      "type": "kr.co.koreazinc.tomcat.property.ApjProperty",
+      "sourceType": "kr.co.koreazinc.tomcat.property.ApjProperty"
+    }
+  ]
+}

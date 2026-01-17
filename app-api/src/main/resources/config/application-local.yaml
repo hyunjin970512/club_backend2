@@ -1,0 +1,15 @@
+server:
+  port: 11000
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
+spring:
+  devtools: # devtools
+    livereload:
+      enabled: false
+    restart:
+      enabled: true

@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "spring.security.oauth2",
+      "type": "kr.co.koreazinc.spring.security.property.OAuth2Property",
+      "sourceType": "kr.co.koreazinc.spring.security.property.OAuth2Property"
+    }
+  ]
+}

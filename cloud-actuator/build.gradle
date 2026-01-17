@@ -1,0 +1,18 @@
+dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    // Metrics
+    runtimeOnly "io.micrometer:micrometer-registry-prometheus"
+    // Traces
+    implementation "io.micrometer:micrometer-tracing-bridge-otel"
+    implementation "io.opentelemetry:opentelemetry-exporter-otlp"
+    implementation "net.ttddyy.observation:datasource-micrometer:1.2.0"
+    implementation "net.ttddyy.observation:datasource-micrometer-spring-boot:1.2.0"
+    implementation platform("net.ttddyy.observation:datasource-micrometer-bom:1.2.0")
+    // Logs
+    implementation "com.github.loki4j:loki-logback-appender:latest.release"
+    // Profiles
+    implementation "io.pyroscope:agent:latest.release"
+}
+
+bootJar { enabled = false }
+jar { enabled = true }

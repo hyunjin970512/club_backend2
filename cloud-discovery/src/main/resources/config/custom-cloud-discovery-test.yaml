@@ -1,0 +1,14 @@
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    prefer-ip-address: true
+    ip-address: ${EXTERNAL_IP:${server.address:172.0.0.1}}
+    non-secure-port: ${EXTERNAL_PORT:${server.port:8080}}
+    home-page-url: http://${EXTERNAL_IP:${server.address:172.0.0.1}}:${EXTERNAL_PORT:${server.port:8080}}
+    status-page-url: http://${EXTERNAL_IP:${server.address:172.0.0.1}}:${EXTERNAL_PORT:${server.port:8080}}/actuator/info
+    health-check-url: http://${EXTERNAL_IP:${server.address:172.0.0.1}}:${EXTERNAL_PORT:${server.port:8080}}/actuator/health
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: https://eureka-dev.koreazinc.co.kr/eureka

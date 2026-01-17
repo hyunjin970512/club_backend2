@@ -1,0 +1,39 @@
+temp:
+  datasource:
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    jdbc-url: 
+    username: 
+    password: 
+    connection-timeout: 30000
+    max-lifetime: 30000
+    maximum-pool-size: 10
+    data-source-properties:
+      cachePrepStmts: true
+      prepStmtCacheSize: 250
+      prepStmtCacheSqlLimit: 2048
+      useServerPrepStmts: true
+      useLocalSessionState: true
+      rewriteBatchedStatements: true
+      cacheResultSetMetadata: true
+      cacheServerConfiguration: true
+      elideSetAutoCommits: true
+      maintainTimeStats: false
+      trustServerCertificate: true
+      encrypt: true
+
+  jpa:
+    database-platform: kr.co.koreazinc.temp.configuration.CustomDialect
+    open-in-view: false
+    properties:
+      hibernate:
+        show_sql: false
+        format_sql: false
+        use_sql_comments: false
+        generate_statistics: false
+        globally_quoted_identifiers: false
+        create_empty_composites:
+          enabled: false
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: kr.co.koreazinc.data.strategy.physical.NaturalNamingStrategy

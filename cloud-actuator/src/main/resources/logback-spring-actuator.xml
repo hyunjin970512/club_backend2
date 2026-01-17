@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!-- 공통 설정 -->
+  <include resource="logback/common.xml"/>
+
+  <!-- 콘솔 출력 -->
+  <include resource="logback/appender-console.xml"/>
+
+  <!-- 파일 출력 -->
+  <include resource="logback/appender-file.xml"/>
+
+  <!-- Loki 출력 -->
+  <include resource="logback/appender-loki.xml"/>
+
+  <!-- Profile -->
+  <springProfile name="local">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <include resource="logback/logger-local.xml"/>
+  </springProfile>
+
+  <springProfile name="dev">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <include resource="logback/logger-dev.xml"/>
+  </springProfile>
+
+  <springProfile name="prod">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+      <appender-ref ref="LOKI"/>
+    </root>
+
+    <include resource="logback/logger-prod.xml"/>
+  </springProfile>
+</configuration>

@@ -1,0 +1,44 @@
+logging:
+  config: classpath:logback-spring-actuator.xml
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      base-path: /actuator
+      exposure:
+        include: health, prometheus
+    jmx:
+      exposure:
+        exclude: "*"
+  health:
+    diskSpace:
+      enabled: false
+    ping:
+      enabled: false
+  endpoint:
+    health:
+      enabled: true
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+  tracing:
+    enabled: true
+    sampling:
+      probability: 0.3
+  otlp:
+    metrics:
+      export:
+        enabled: false
+    tracing:
+      endpoint: https://tempo-otlp.koreazinc.co.kr/v1/traces
+
+pyroscope:
+  enabled: true
+  server-address: https://pyroscope.koreazinc.co.kr

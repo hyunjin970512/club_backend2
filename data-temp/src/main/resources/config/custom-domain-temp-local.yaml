@@ -1,0 +1,53 @@
+temp:
+  datasource: # DB 접속정보
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    jdbc-url: jdbc:log4jdbc:sqlserver://172.15.100.102:1433;databaseName=IAMS
+    username: sys_iams
+    password: iams!@345
+    connection-timeout: 30000
+    max-lifetime: 30000
+    maximum-pool-size: 10
+    data-source-properties:
+      cachePrepStmts: true
+      prepStmtCacheSize: 250
+      prepStmtCacheSqlLimit: 2048
+      useServerPrepStmts: true
+      useLocalSessionState: true
+      rewriteBatchedStatements: true
+      cacheResultSetMetadata: true
+      cacheServerConfiguration: true
+      elideSetAutoCommits: true
+      maintainTimeStats: false
+      trustServerCertificate: true
+      encrypt: true
+
+  jpa: # JPA 설정
+    database-platform: kr.co.koreazinc.temp.configuration.CustomDialect
+    open-in-view: false
+    properties:
+      hibernate:
+        # 하이버네이트가 실행하는 모든 SQL문을 콘솔로 출력해 준다.
+        show_sql: false
+        # 콘솔에 출력되는 JPA 실행 쿼리를 가독성있게 표현한다.
+        format_sql: false
+        # 디버깅이 용이하도록 SQL문 이외에 추가적인 정보를 출력해 준다.
+        use_sql_comments: false
+        # 세션 메트릭 표시
+        generate_statistics: false
+        # 예약여 사용 가능 여부
+        globally_quoted_identifiers: false
+        # 빈 엔터티의 경우 null아닌 객체로 반환
+        create_empty_composites:
+          enabled: false
+    hibernate:
+      ddl-auto: none
+      # create: 기존테이블 삭제 후 다시 생성 (DROP + CREATE)
+      # create-drop: create와 같으나 종료시점에 테이블 DROP
+      # update: 변경분만 반영
+      # validate: 엔터티와 테이블이 정상 매핑되었는지만 확인
+      # none: 사용하지 않음
+      naming:
+        # 논리적 명명 전략
+        # implicit-strategy:
+        # 물리적 명명 전략
+        physical-strategy: kr.co.koreazinc.data.strategy.physical.NaturalNamingStrategy

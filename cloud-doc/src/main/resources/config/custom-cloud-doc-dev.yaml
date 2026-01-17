@@ -1,0 +1,16 @@
+springdoc:
+  use-fqn: true
+  explicit-object-schema: true
+  api-docs:
+    enabled: false
+    path: /api-docs
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  cache:
+    disabled: false
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui
+    tags-sorter: alpha
+    operations-sorter: alpha
+    disable-swagger-default-url: true

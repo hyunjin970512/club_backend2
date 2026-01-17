@@ -1,0 +1,75 @@
+plugins {
+    id "java"
+    id "java-library"
+    id "org.springframework.boot" version "3.4.10"
+    id "io.spring.dependency-management" version "1.1.7"
+    id "com.google.cloud.tools.jib" version "3.4.4"
+}
+
+allprojects {
+    group = "kr.co.koreazinc"
+    version = "0.0.1-SNAPSHOT"
+
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+
+    repositories {
+        mavenCentral()
+    }
+
+    apply plugin: "java"
+    apply plugin: "java-library"
+    apply plugin: "org.springframework.boot"
+    apply plugin: "io.spring.dependency-management"
+    apply plugin: "com.google.cloud.tools.jib"
+
+    dependencyManagement {
+        imports {
+            mavenBom "com.querydsl:querydsl-bom:5.1.0"
+            mavenBom "org.springdoc:springdoc-openapi:2.8.3"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.10"
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:2024.0.0"
+        }
+    }
+
+    dependencies {
+        // Lombok
+        implementation "org.projectlombok:lombok"
+        annotationProcessor "org.projectlombok:lombok"
+        testAnnotationProcessor "org.projectlombok:lombok"
+
+        // Slf4j
+        implementation "org.slf4j:slf4j-api"
+        implementation "ch.qos.logback:logback-classic"
+
+        // Spring Boot
+        implementation "org.springframework.boot:spring-boot-starter"
+
+        // Jackson
+        implementation "org.openapitools:jackson-databind-nullable:0.2.6"
+        implementation "org.springframework.boot:spring-boot-starter-json"
+
+        developmentOnly "org.springframework.boot:spring-boot-devtools"
+
+        // Junit
+        testImplementation("org.springframework.boot:spring-boot-starter-test") {
+            exclude group: "org.junit.vintage", module: "junit-vintage-engine"
+        }
+        testImplementation "org.junit.jupiter:junit-jupiter-api"
+        testImplementation "org.junit.jupiter:junit-jupiter-engine"
+        testImplementation "org.junit.jupiter:junit-jupiter-params"
+
+        // Springdoc
+        implementation "org.springdoc:springdoc-openapi-starter-common"
+
+        // Utils
+        implementation "com.google.guava:guava"
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+bootJar {enabled = false}
+jar {enabled = true}

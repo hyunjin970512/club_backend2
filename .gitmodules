@@ -1,0 +1,27 @@
+# git clone --recurse-submodules {root}
+# git submodule init
+# git submodule update --recursive --remote
+
+[submodule "spring-core"]
+	path = spring-core
+	url = https://gitlab01.sorin.co.kr/framework-3.x.x/spring/spring-core.git
+
+[submodule "cloud-actuator"]
+	path = cloud-actuator
+	url = https://gitlab01.sorin.co.kr/framework-3.x.x/cloud/cloud-actuator.git
+
+[submodule "cloud-tomcat"]
+	path = cloud-tomcat
+	url = https://gitlab01.sorin.co.kr/framework-3.x.x/cloud/cloud-tomcat.git
+
+[submodule "cloud-doc"]
+	path = cloud-doc
+	url = https://gitlab01.sorin.co.kr/framework-3.x.x/cloud/cloud-doc.git
+
+[submodule "cloud-discovery"]
+	path = cloud-discovery
+	url = https://gitlab01.sorin.co.kr/framework-3.x.x/cloud/cloud-discovery.git
+
+[submodule "data-core"]
+	path = data-core
+	url = https://gitlab01.sorin.co.kr/framework-3.x.x/data/data-core.git

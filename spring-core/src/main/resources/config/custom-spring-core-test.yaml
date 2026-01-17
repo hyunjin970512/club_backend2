@@ -1,0 +1,85 @@
+server:
+  error:
+    path: /error
+    whitelabel:
+      enabled: false
+
+logging:
+  file:
+    path: logs
+
+spring:
+  config:
+    activate:
+      on-profile: test
+  main:
+    web-application-type: servlet
+  output:
+    ansi:
+      enabled: always
+  mvc:
+    throw-exception-if-no-handler-found: true
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  web:
+    resources:
+      add-mappings: false
+  multipart:
+    max-file-size: 50MB
+    max-request-size: 100MB
+  thymeleaf:
+    enabled: true
+    prefix: classpath:templates/
+    suffix: .html
+    encoding: UTF-8
+    mode: HTML
+    check-template: true
+    check-template-location: true
+    cache: true
+  messages:
+    basename:
+      - classpath:/messages/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+  devtools:
+    livereload:
+      enabled: false
+    restart:
+      enabled: false
+  security:
+    oauth2:
+      tenant:
+        id: 2002127d-ecd5-424c-b995-a6f750055ecd
+      provider:
+        microsoft:
+          base-url: https://login.microsoftonline.com
+          token-url: https://login.microsoftonline.com/${spring.security.oauth2.tenant.id}/oauth2/v2.0/token
+          scope: https://graph.microsoft.com/.default
+          discovery-url: https://login.microsoftonline.com/${spring.security.oauth2.tenant.id}/discovery/v2.0/keys?appid=${spring.security.oauth2.client.id}
+        auth:
+          base-url: https://auth-dev.koreazinc.co.kr
+          authorization-url: https://auth-dev.koreazinc.co.kr/v2/oauth/login
+          token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
+          user-info-url: https://auth-dev.koreazinc.co.kr/v2/user/me
+          logout-url: https://auth-dev.koreazinc.co.kr/v2/oauth/logout
+          scope: api://278edc9e-5662-4af5-b373-3f59330612e6/.default
+        file:
+          base-url: https://filesdev.koreazinc.co.kr
+          token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
+          scope: api://8dc5950a-b206-4b65-897c-a04e8fcb193b/.default
+        message:
+          base-url: https://message-api-dev.koreazinc.co.kr
+          token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
+          scope: api://69721da5-1b95-473f-86fe-432c81850063/.default
+        hr:
+          base-url: https://ehr-api-dev.koreazinc.co.kr
+          token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
+          scope: api://c2abd92e-0d00-48b4-967c-f10c575920c8/.default
+        gw:
+          base-url: https://gw-api-dev.koreazinc.co.kr
+          token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
+          scope: api://9fe3b276-d24f-432e-ab78-eaafd689b79a/.default
+      client:
+        redirect:
+          login-url: '{URL}/authorize'
+          logout-url: '{URL}'

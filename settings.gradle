@@ -1,0 +1,5 @@
+rootProject.name = 'temp'
+include 'cloud-tomcat', 'cloud-actuator', 'cloud-discovery', 'cloud-doc'
+include 'app-api'
+include 'data-core', 'data-temp'
+include 'spring-core'
