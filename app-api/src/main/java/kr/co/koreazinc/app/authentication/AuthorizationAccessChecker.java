@@ -10,24 +10,27 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.stereotype.Component;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
-public class AuthorizationAccessChecker
-        implements AuthorizationManager<RequestAuthorizationContext> {
+public class AuthorizationAccessChecker implements AuthorizationManager<RequestAuthorizationContext> {
 
     @Override
-    public AuthorizationDecision check(Supplier<Authentication> authentication,
-            RequestAuthorizationContext context) {
-        return new AuthorizationDecision(this.check(authentication.get(), context.getRequest()));
+    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier,
+                                      RequestAuthorizationContext context) {
+        Authentication authentication = authenticationSupplier.get();
+        HttpServletRequest request = context.getRequest();
+
+        return new AuthorizationDecision(checkInternal(authentication, request));
     }
 
-    private boolean check(Authentication authentication, HttpServletRequest request) {
-        Object userDetails = authentication.getPrincipal();
-        if (userDetails instanceof UserDetails) {
-            return true;
+    private boolean checkInternal(Authentication authentication, HttpServletRequest request) {
+        if (authentication == null) {
+            System.out.println("[ACCESS] auth=null");
+            return false;
         }
-        return false;
+        Object p = authentication.getPrincipal();
+        System.out.println("[ACCESS] principalType=" + (p == null ? "null" : p.getClass().getName()));
+        return (p instanceof UserDetails);
     }
+
 }
