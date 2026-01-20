@@ -14,5 +14,5 @@ dependencies {
     implementation "io.pyroscope:agent:latest.release"
 }
 
-bootJar { enabled = false }
-jar { enabled = true }
+//bootJar { enabled = false }
+//jar { enabled = true }

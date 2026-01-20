@@ -3,5 +3,5 @@ dependencies {
     implementation "com.github.ben-manes.caffeine:caffeine"
 }
 
-bootJar {enabled = false}
-jar {enabled = true}
+//bootJar {enabled = false}
+//jar {enabled = true}

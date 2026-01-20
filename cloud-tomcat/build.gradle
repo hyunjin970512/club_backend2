@@ -2,5 +2,5 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-tomcat"
 }
 
-bootJar {enabled = false}
-jar {enabled = true}
+// bootJar {enabled = false}
+// jar {enabled = true}

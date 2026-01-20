@@ -23,5 +23,5 @@ clean.doLast {
     file(querydslDir).deleteDir()
 }
 
-bootJar {enabled = false}
-jar {enabled = true}
+//bootJar {enabled = false}
+//jar {enabled = true}

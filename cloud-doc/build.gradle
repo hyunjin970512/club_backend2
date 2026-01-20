@@ -5,5 +5,5 @@ dependencies {
     api "org.springdoc:springdoc-openapi-starter-webflux-api"
 }
 
-bootJar {enabled = false}
-jar {enabled = true}
+//bootJar {enabled = false}
+//jar {enabled = true}
