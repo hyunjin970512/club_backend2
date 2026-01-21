@@ -51,7 +51,10 @@ public class WebSecurityConfig {
                     "/api/clubs/**",
                     "/oauth/callback"
                 ).permitAll()
-                .requestMatchers("/api/**").access(accessChecker)
+                .requestMatchers(
+                		"/api/**",
+                		"/main/**"
+                		).access(accessChecker)
                 .anyRequest().permitAll()
             );
 

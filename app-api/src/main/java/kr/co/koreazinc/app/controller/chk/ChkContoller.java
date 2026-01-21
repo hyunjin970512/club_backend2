@@ -20,8 +20,6 @@ public class ChkContoller {
 
 	@GetMapping("/api/me")
 	public ApiResponse<Meresponse> me(@AuthenticationPrincipal UserPrincipal principal) {
-	  
-		System.err.println("[HJLOG] 데이터 확인 : " + principal);
 		if (principal == null) {
 	    return ApiResponse.fail("UNAUTHORIZED", "로그인이 필요합니다.");
 	  }

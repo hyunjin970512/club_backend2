@@ -11,6 +11,9 @@ dependencies {
     // runtimeOnly "org.xerial.sqlite-jdbc:sqlite-jdbc"
     // runtimeOnly "org.mongodb:mongodb-driver-sync"
     // runtimeOnly "com.h2database:h2"
+    
+    implementation "com.querydsl:querydsl-jpa:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
+    implementation "com.querydsl:querydsl-core:${dependencyManagement.importedProperties['querydsl.version']}"
 
     annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"

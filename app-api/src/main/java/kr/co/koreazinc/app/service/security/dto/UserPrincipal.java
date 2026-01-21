@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class UserPrincipal implements UserDetails {
 
 	private final String empNo;   // 사번
-	private final String accId;   // 계정아이디(있으면)
+	private final String accId;   // 계정아이디
 	private final Collection<? extends GrantedAuthority> authorities;
 	
 	public UserPrincipal(String empNo, String accId,
