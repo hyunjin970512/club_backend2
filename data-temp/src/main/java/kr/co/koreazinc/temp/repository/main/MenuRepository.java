@@ -1,6 +1,6 @@
 package kr.co.koreazinc.temp.repository.main;
 
-import static kr.co.koreazinc.temp.model.entity.main.QCoEmplBas.coEmplBas;
+import static kr.co.koreazinc.temp.model.entity.account.QCoEmplBas.coEmplBas;
 import static kr.co.koreazinc.temp.model.entity.main.QMenuInfo.menuInfo;
 import static kr.co.koreazinc.temp.model.entity.main.QMenuRoleMap.menuRoleMap;
 
