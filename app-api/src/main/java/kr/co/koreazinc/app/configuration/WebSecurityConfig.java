@@ -48,6 +48,7 @@ public class WebSecurityConfig {
                     "/swagger-ui/**",
                     "/api-docs/**",
                     "/api/auth/login",
+                    "/api/clubs/**",
                     "/oauth/callback"
                 ).permitAll()
                 .requestMatchers("/api/**").access(accessChecker)

@@ -22,7 +22,7 @@ temp:
       encrypt: true
 
   jpa: # JPA 설정
-    database-platform: kr.co.koreazinc.temp.configuration.CustomDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
     properties:
       hibernate:
