@@ -70,28 +70,28 @@ public class ClubBoard{
     private int viewCnt;
     
     @Column(name = "recomend_cnt")
-    private int recommendCnt;
+    private int recomendCnt;
     
     @Transient
     private int commentCnt;
     
     public interface Getter {
-        Integer getBoardId();
-        Integer getClubId();
-        String getTitle();
-        String getContent();
-        String getNoticeYn();
-        String getNoticeDt();
-        String getDeleteYn();
-        String getCreateUser();
-        java.time.LocalDateTime getCreateDate();
-        String getUpdateUser();
-        java.time.LocalDateTime getUpdateDate();
-        int getViewCnt();
-        int getRecommendCnt();
-        String getUserEmpNo(); 
-        String getIsNotice();
-        String getExpiryDate();
+    	default Integer getBoardId() { return null; }
+        default Integer getClubId() { return null; }
+        default String getTitle() { return null; }
+        default String getContent() { return null; }
+        default String getNoticeYn() { return null; }
+        default String getNoticeDt() { return null; }
+        default String getDeleteYn() { return "N"; }
+        default String getCreateUser() { return null; }
+        default java.time.LocalDateTime getCreateDate() { return null; }
+        default String getUpdateUser() { return null; }
+        default java.time.LocalDateTime getUpdateDate() { return null; }
+        default int getViewCnt() { return 0; }
+        default int getRecommendCnt() { return 0; }
+        default String getUserEmpNo() { return null; } 
+        default String getIsNotice() { return null; }
+        default String getExpiryDate() { return null; }
     }
     
     public interface Setter {
@@ -130,4 +130,14 @@ public class ClubBoard{
             this.comments.forEach(c -> c.softDelete(updateUser));
         }
     }
+    
+    // 수정
+	public void update(String title, String content, String expiryDate, String isNotice, String updateUser) {
+		this.title = title;
+        this.content = content;
+        this.noticeDt = expiryDate;
+        this.noticeYn = isNotice;
+        this.updateUser = updateUser;
+        this.updateDate = java.time.LocalDateTime.now();
+	}
 }

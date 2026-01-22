@@ -19,7 +19,7 @@ public class ClubBoardConverter extends EntityConverter<ClubBoard.Getter, ClubBo
                 .noticeYn(this.origin.getIsNotice() != null ? this.origin.getIsNotice() : "N")
                 .noticeDt(this.origin.getExpiryDate())
                 .viewCnt(0)
-                .recommendCnt(0)
+                .recomendCnt(0)
                 .deleteYn("N")
                 .createUser(this.origin.getUserEmpNo())
                 .createDate(java.time.LocalDateTime.now())
@@ -31,5 +31,16 @@ public class ClubBoardConverter extends EntityConverter<ClubBoard.Getter, ClubBo
 	// 삭제
 	public void toDeleteEntity(ClubBoard post, String empNo) {
 		post.deletePost(empNo);
+	}
+	
+	// 수정
+	public void toUpdateEntity(ClubBoard post, String empNo) {
+		post.update(
+				this.origin.getTitle(), 
+				this.origin.getContent(),
+				this.origin.getExpiryDate(),
+				this.origin.getIsNotice(),
+				this.origin.getUserEmpNo()
+		);
 	}
 }

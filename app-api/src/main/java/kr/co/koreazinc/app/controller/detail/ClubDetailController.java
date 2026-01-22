@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -20,9 +21,11 @@ import com.github.loki4j.client.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
+import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
 import kr.co.koreazinc.app.service.detail.ClubDetailService;
+import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
 import kr.co.koreazinc.temp.model.entity.detail.ClubFeeInfo;
 import lombok.RequiredArgsConstructor;
 
@@ -155,5 +158,45 @@ public class ClubDetailController {
     	return ResponseEntity.ok(response);
     }
     
+    @Operation(summary = "동호회 게시글 상세 조회")
+    @GetMapping("/{id}/posts/{postId}")
+    public ResponseEntity<?> getClusPostDetail (
+    		@PathVariable("id") Integer clubId,
+    		@PathVariable("postId") Integer postId) {
+    	
+    	ClubBoardDto.Get result = clubDetailService.getClubPostDetail(clubId, postId);
+    	
+    	if (result == null) {
+    		return ResponseEntity.notFound().build();
+    	}
+    	return ResponseEntity.ok(result);
+    }
     
+    @Operation(summary = "동호회 댓글 조회")
+    @GetMapping("/posts/{boardId}/comments")
+    public ResponseEntity<List<ClubCommentDto>> getComments(@PathVariable("boardId") Long boardId) {
+    	List<ClubCommentDto> list = clubDetailService.getCommentList(boardId);
+    	return ResponseEntity.ok(list);
+    }
+    
+    @Operation(summary = "동호회 게시글 수정")
+    @PostMapping("/{clubId}/posts/{boardId}")
+    public ResponseEntity<?> updatePost(
+    		@PathVariable("clubId") Long clubId,
+    		@PathVariable("boardId") Long boardId, 
+    		@RequestPart("data") ClubBoardDto.Get dto,
+    		@ModelAttribute("loginEmpNo") String empNo) {
+    	try {
+    		clubDetailService.updatePost(dto, empNo);
+    		
+    		return ResponseEntity.ok(Map.of(
+    	            "success", true,
+    	            "message", "게시글이 성공적으로 수정되었습니다."
+    	        ));
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("success", false, "message", "수정 중 오류 발생: " + e.getMessage()));
+    	}
+    }
 }

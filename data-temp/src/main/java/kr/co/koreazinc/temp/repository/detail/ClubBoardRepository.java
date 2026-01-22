@@ -56,7 +56,7 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
                         coEmplBas.positionCd.as("authorPosition"),
                         clubBoard.createDate.as("createDate"),
                         clubBoard.viewCnt,
-                        clubBoard.recommendCnt,
+                        clubBoard.recomendCnt,
                         clubComment.commentId.count().intValue().as("commentCnt")
                 ))
                 .from(clubBoard)
@@ -78,7 +78,7 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
 	   // 1. 추천수 증가
 	   int affectedRows = (int) queryFactory
 	            .update(clubBoard)
-	            .set(clubBoard.recommendCnt, clubBoard.recommendCnt.add(1))
+	            .set(clubBoard.recomendCnt, clubBoard.recomendCnt.add(1))
 	            .where(clubBoard.boardId.eq(boardId).and(clubBoard.deleteYn.eq("N")))
 	            .execute();
 	   
@@ -88,7 +88,7 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
 	   
 	   // 2. 갱신 추천수 재조회
 	   Integer lastCnt = queryFactory
-	            .select(clubBoard.recommendCnt)
+	            .select(clubBoard.recomendCnt)
 	            .from(clubBoard)
 	            .where(clubBoard.boardId.eq(boardId))
 	            .fetchOne();
@@ -103,5 +103,33 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
    public ClubBoard insert(ClubBoard.Getter getter) {
 	   ClubBoard entity = new ClubBoardConverter(getter).toEntity(); // DTO(getter)를 엔티티로 변환
  	  return insert(entity);
+   }
+   
+   /**
+    * 게시글 상세보기
+    */
+   /**
+    * 게시글 상세 조회 (Fluent API 방식)
+    */
+   public <T> T selectClubPostDetail(Class<T> type, Integer boardId) {
+	   return queryFactory
+	            .select(Projections.bean(type,
+	                    clubBoard.boardId,
+	                    clubBoard.clubId,
+	                    clubBoard.title,
+	                    clubBoard.content,
+	                    clubBoard.noticeYn.as("isNotice"),   // DTO 필드명에 맞춤
+	                    clubBoard.noticeDt.as("expiryDate"), // DTO 필드명에 맞춤
+	                    clubBoard.createUser,
+	                    clubBoard.createDate,
+	                    clubBoard.viewCnt,
+	                    clubBoard.recomendCnt,
+	                    coEmplBas.nameKo.as("authorNm")
+	            ))
+	            .from(clubBoard)
+	            .leftJoin(coEmplBas).on(coEmplBas.empNo.eq(clubBoard.createUser))
+	            .where(clubBoard.boardId.eq(boardId)
+	                    .and(clubBoard.deleteYn.eq("N")))
+	            .fetchOne();
    }
 }

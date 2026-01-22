@@ -9,10 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
+import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
+import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
 import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
+import kr.co.koreazinc.temp.repository.detail.ClubCommentRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubDetailRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,7 @@ public class ClubDetailService {
 	
 	private final ClubDetailRepository clubDetailRepository;
 	private final ClubBoardRepository clubBoardRepository;
+	private final ClubCommentRepository clubCommentRepository;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -57,8 +61,10 @@ public class ClubDetailService {
 	        map.put("title", post.getTitle());
 	        map.put("content", post.getContent());
 	        map.put("authorNm", post.getAuthorNm());
+	        map.put("authorPosition", post.getAuthorPosition());
 	        map.put("createDate", post.getCreateDate());
 	        map.put("commentCnt", post.getCommentCnt());
+	        map.put("recommendCnt", post.getRecomendCnt());
 	        return map;
 	    }).collect(Collectors.toList());
 	}
@@ -130,4 +136,46 @@ public class ClubDetailService {
 			return false;
 		}
 	}
+	
+	/**
+     * 동호회 게시글 수정
+     */
+	@Transactional
+	public void updatePost(ClubBoardDto.Get dto, String empNo) {
+		ClubBoard post = clubBoardRepository.findOne(dto.getBoardId());
+		
+		if (!post.getCreateUser().equals(empNo)) {
+	        throw new SecurityException("본인이 작성한 글만 수정할 수 있습니다.");
+	    }
+		
+		post.update(
+				dto.getTitle(),
+		        dto.getContent(),
+		        dto.getExpiryDate(),
+		        dto.getIsNotice(),
+		        empNo
+		);
+	} 
+	
+	/**
+     * 동호회 게시글 상세보기
+     */
+	public ClubBoardDto.Get getClubPostDetail(Integer clubId, Integer boardId) {
+		ClubBoardDto.Get detail = clubBoardRepository.selectClubPostDetail(ClubBoardDto.Get.class, boardId);
+		
+		if(detail == null || !detail.getClubId().equals(clubId)) {
+			log.warn("조회 권한 없음 또는 게시글 없음: clubId={}, boardId={}", clubId, boardId);
+			return null;
+		}
+		return detail;
+	}
+	
+	
+	/**
+     * 동호회 댓글 조회
+     */
+	public List<ClubCommentDto> getCommentList(Long boardId) {
+		return clubCommentRepository.selectCommentList(ClubCommentDto.class, boardId);
+	}
+	
 }
