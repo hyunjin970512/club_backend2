@@ -88,6 +88,25 @@ public class ClubDetailController {
     	}
     }
     
+    @Operation(summary = "동호회 게시글 조회수 증가")
+    @PostMapping("/posts/{boardId}/view")
+    public ResponseEntity<Map<String, Object>> viewPost(@PathVariable("boardId") int boardId) {
+    	Map<String, Object> result = new HashMap<>();
+    	
+    	try {
+    		int viewCnt = clubDetailService.updateViewCount(boardId);
+    		
+    		result.put("success", true);
+            result.put("lastCnt", viewCnt);
+            
+            return ResponseEntity.ok(result);
+    	} catch (Exception e) {
+    		result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
+    	}
+    }
+    
     @Operation(summary = "동호회 회비 조회")
     @GetMapping("/{clubId}/fee")
     public ResponseEntity<List<ClubFeeInfoDto.Get>> getClubFeeInfoList(@PathVariable("clubId") Integer clubId) {

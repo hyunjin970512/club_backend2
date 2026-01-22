@@ -65,6 +65,7 @@ public class ClubDetailService {
 	        map.put("createDate", post.getCreateDate());
 	        map.put("commentCnt", post.getCommentCnt());
 	        map.put("recommendCnt", post.getRecomendCnt());
+	        map.put("viewCnt", post.getViewCnt());
 	        return map;
 	    }).collect(Collectors.toList());
 	}
@@ -75,6 +76,14 @@ public class ClubDetailService {
 	@Transactional
 	public int updateRecommendPost(int boardId) {
 		return clubBoardRepository.updateRecommendPost(boardId);
+	}
+	
+	 /**
+    * 동호회 게시글 조회수 증가
+    */
+	@Transactional
+	public int updateViewCount(int boardId) {
+		return clubBoardRepository.updateViewCount(boardId);
 	}
 	
 	/**

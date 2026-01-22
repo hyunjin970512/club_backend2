@@ -97,6 +97,31 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
    }
    
    /**
+    * 게시글 조회수 증가하기
+    */
+   public int updateViewCount(int boardId) {
+	// 1. 조회수 1 증가 (Update 쿼리 수행)
+	    long affectedRows = queryFactory
+	            .update(clubBoard)
+	            .set(clubBoard.viewCnt, clubBoard.viewCnt.add(1))
+	            .where(clubBoard.boardId.eq(boardId).and(clubBoard.deleteYn.eq("N")))
+	            .execute();
+	    
+	    if (affectedRows == 0) {
+	        throw new RuntimeException("해당 게시글을 찾을 수 없거나 삭제된 상태입니다.");
+	    }
+	    
+	    // 2. 갱신된 조회수 재조회
+	    Integer lastViewCnt = queryFactory
+	            .select(clubBoard.viewCnt)
+	            .from(clubBoard)
+	            .where(clubBoard.boardId.eq(boardId))
+	            .fetchOne();
+	  
+	    return lastViewCnt != null ? lastViewCnt : 0;
+   }
+   
+   /**
     * 동호회 게시글 저장하기 (표준 Converter 방식 Insert)
     * ClubBoard.Getter 인터페이스를 구현한 어떤 객체(DTO)든 인자로 받을 수 있음
     */
