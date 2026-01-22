@@ -112,14 +112,14 @@ public class OAuthCallbackController {
         .maxAge(0)
         .build();
 
-    String host = request.getHeader("X-Forwarded-Host");
-    if (host == null || host.isBlank()) host = request.getHeader("Host");
-    if (host == null || host.isBlank()) host = request.getServerName();
+    //redirectUrl
+    String reqHost = request.getHeader("Host");
+    if (reqHost == null || reqHost.isBlank()) reqHost = request.getServerName();
 
-    // 포트 제거
-    host = host.replaceAll(":\\d+$", "");
+    reqHost = reqHost.replaceAll(":\\d+$", ""); // 포트 제거
 
-    String redirectUrl = "http://" + host + ":3000/main";
+    String redirectUrl = "http://" + reqHost + ":3000/main";
+
 
     HttpHeaders out = new HttpHeaders();
     out.add(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -142,7 +142,7 @@ public class OAuthCallbackController {
     if (!(first instanceof Map)) return null;
 
     Map<String, Object> job0 = (Map<String, Object>) first;
-    // ✅ 니 JSON 기준 키가 "empNo"
+    // ✅ JSON 기준 키가 "empNo"
     return toNonNullString(job0.get("empNo"));
   }
 
