@@ -112,7 +112,13 @@ public class OAuthCallbackController {
         .maxAge(0)
         .build();
 
-    String host = request.getServerName();
+    String host = request.getHeader("X-Forwarded-Host");
+    if (host == null || host.isBlank()) host = request.getHeader("Host");
+    if (host == null || host.isBlank()) host = request.getServerName();
+
+    // 포트 제거
+    host = host.replaceAll(":\\d+$", "");
+
     String redirectUrl = "http://" + host + ":3000/main";
 
     HttpHeaders out = new HttpHeaders();

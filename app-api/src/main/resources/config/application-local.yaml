@@ -1,5 +1,6 @@
 server:
   port: 8081
+  forward-headers-strategy: framework
 
 springdoc:
   api-docs:
@@ -19,7 +20,25 @@ oauth:
   login-url: https://auth-dev.koreazinc.co.kr/oauth2/login
   token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
   userinfo-url: https://auth-dev.koreazinc.co.kr/v2/user/me
+  #redirect-uri: http://localhost:8081/oauth/callback
+  
+---
+# [1. 로컬 환경]
+spring:
+  config:
+    activate:
+      on-profile: local
+oauth:
   redirect-uri: http://localhost:8081/oauth/callback
+
+---
+# [2. IP 접속 테스트 환경]
+spring:
+  config:
+    activate:
+      on-profile: dev
+oauth:
+  redirect-uri: http://172.20.27.4:8081/oauth/callback  
 
 logging:
   level:
