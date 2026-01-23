@@ -23,7 +23,15 @@ import kr.co.koreazinc.temp.model.entity.main.QCoCommonCode;
 public class MainClubRepository extends AbstractJpaRepository<ClubInfo, Long> {
 
     private static final String MAIN_CODE_CLUB_TYPE = "CLUB_TYPE";
+    
+    // 동호회 가입 상태 코드
     private static final String JOINED_STATUS = "20";
+    
+    // 동호회 상태코드
+    private static final String STATUS_10 = "10";	//사전요청
+    private static final String STATUS_20 = "20";	//정식요청
+    private static final String STATUS_30 = "30";	//운영중
+
 
     public MainClubRepository(List<EntityManager> entityManagers) {
         super(ClubInfo.class, entityManagers);
@@ -101,6 +109,9 @@ public class MainClubRepository extends AbstractJpaRepository<ClubInfo, Long> {
                     ccc.id.mainCode.eq(MAIN_CODE_CLUB_TYPE)
                         .and(ci.clubType.eq(ccc.id.subCode))
                 )
+                .where(
+                        ci.status.in(STATUS_10, STATUS_20, STATUS_30)
+                    )
         );
     }
 

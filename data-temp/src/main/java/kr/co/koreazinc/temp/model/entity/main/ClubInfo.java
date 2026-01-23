@@ -6,10 +6,12 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "club_info")
 @Getter
+@Setter
 @NoArgsConstructor
 public class ClubInfo {
 
