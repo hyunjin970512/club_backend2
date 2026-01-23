@@ -7,11 +7,13 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
+import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
 import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
@@ -29,6 +31,7 @@ public class ClubDetailService {
 	private final ClubDetailRepository clubDetailRepository;
 	private final ClubBoardRepository clubBoardRepository;
 	private final ClubCommentRepository clubCommentRepository;
+	private final CommonDocService commonDocService;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -108,9 +111,25 @@ public class ClubDetailService {
      * 동호회 게시글 작성 (Converter 기반 표준 방식)
      */
 	@Transactional
-	public boolean insertClubPost(ClubBoardDto.Get dto) {
+	public boolean insertClubPost(ClubBoardDto.Get dto, List<MultipartFile> files, String empNo) {
 		try {
-			clubBoardRepository.insert(dto);
+			// 게시글 저장
+			ClubBoard saveBoard = clubBoardRepository.insert(dto);
+			int boardId = saveBoard.getBoardId();
+			
+			// 첨부파일 처리
+			if (files != null && !files.isEmpty()) {
+				for (MultipartFile file : files) {
+					if(!file.isEmpty()) {
+						// 파일을 DB에 바이너리로 저장 후 doc_no 획득
+						Long docNo = commonDocService.saveFile(file, "CB", empNo);
+						
+						if (docNo != null) {
+	                        commonDocService.saveMapping((long) boardId, docNo, empNo);
+	                    }
+					}
+				}
+			}
 			return true;
 		} catch (Exception e) {
 			log.error("게시글 저장 중 서버 에러 발생: {}", e.getMessage());

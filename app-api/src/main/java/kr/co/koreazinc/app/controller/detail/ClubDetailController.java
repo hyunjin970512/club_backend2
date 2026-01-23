@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.github.loki4j.client.http.HttpStatus;
 
@@ -136,6 +137,7 @@ public class ClubDetailController {
     public Map<String, Object> insertClubPost(
 			@PathVariable("clubId") Integer clubId, 
 			@RequestPart("data") ClubBoardDto.Get dto, 
+			@RequestPart(value = "files", required = false) List<MultipartFile> files,
 			@ModelAttribute("loginEmpNo") String empNo) {
     	Map<String, Object> result = new HashMap<>();
     	
@@ -143,7 +145,7 @@ public class ClubDetailController {
     	dto.setUserEmpNo(empNo);
     	dto.setCreateUser(empNo);
     	
-    	boolean isSuccess = clubDetailService.insertClubPost(dto);
+    	boolean isSuccess = clubDetailService.insertClubPost(dto, files, empNo);
     	result.put("success", isSuccess);
     	
     	if (isSuccess) {
