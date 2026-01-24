@@ -55,6 +55,13 @@ public class ClubComment {
 
     @Column(name = "update_date")
     private java.time.LocalDateTime updateDate;
+    
+    public interface Getter {
+        Integer getBoardId();
+        Long getParentCommentId();
+        String getContent();
+        String getCreateUser();
+    }
 
     public interface Setter {
         void setContent(String content);

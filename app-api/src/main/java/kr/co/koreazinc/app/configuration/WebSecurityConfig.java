@@ -49,7 +49,8 @@ public class WebSecurityConfig {
                     "/api-docs/**",
                     "/api/auth/login",
                     "/api/clubs/**",
-                    "/oauth/callback"
+                    "/oauth/callback",
+                    "/api/common/doc/download/**"
                 ).permitAll()
                 .requestMatchers(
                 		"/api/**",

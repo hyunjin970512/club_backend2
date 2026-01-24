@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import static kr.co.koreazinc.temp.model.entity.account.QCoEmplBas.coEmplBas;
 import static kr.co.koreazinc.temp.model.entity.detail.QClubComment.clubComment;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
+import kr.co.koreazinc.temp.model.converter.detail.ClubCommentConverter;
 import kr.co.koreazinc.temp.model.entity.detail.ClubComment;
 
 @Repository
@@ -21,6 +22,9 @@ public class ClubCommentRepository extends AbstractJpaRepository<ClubComment, Lo
         super(ClubComment.class, entityManagers);
     }
 	
+	/**
+     * 댓글 상세 조회 (DTO 프로젝션)
+     */
 	public <T> List<T> selectCommentList(Class<T> type, Long boardId) {
 		return queryFactory
                 .select(Projections.bean(type,
@@ -39,5 +43,14 @@ public class ClubCommentRepository extends AbstractJpaRepository<ClubComment, Lo
                         .and(clubComment.deleteYn.eq("N")))
                 .orderBy(clubComment.createDate.asc()) // 댓글은 작성순 정렬
                 .fetch();
+	}
+	
+	/**
+     * 댓글 저장
+     */
+	@Transactional
+    public ClubComment insert(ClubComment.Getter getter) {
+		ClubComment entity = new ClubCommentConverter(getter).toEntity();
+		return insert(entity);
 	}
 }

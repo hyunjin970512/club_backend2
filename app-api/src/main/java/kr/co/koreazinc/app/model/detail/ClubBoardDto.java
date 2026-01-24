@@ -1,5 +1,8 @@
 package kr.co.koreazinc.app.model.detail;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
@@ -12,7 +15,7 @@ import lombok.Setter;
 
 @Getter 
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 public class ClubBoardDto {
 	
 	@Getter
@@ -32,9 +35,9 @@ public class ClubBoardDto {
 	    private String authorNm;
 	    private String authorPosition;
 	    private String createUser;
-	    private java.time.LocalDateTime createDate;
+	    private LocalDateTime createDate;
 	    private String updateUser;
-	    private java.time.LocalDateTime updateDate;
+	    private LocalDateTime updateDate;
 	    private int viewCnt;
 	    private int recomendCnt;
 	    private int commentCnt;
@@ -44,6 +47,9 @@ public class ClubBoardDto {
 	    private String isNotice; 
 	    private String expiryDate;
 	    private String noticeDt;
+	    
+	    @Schema(description = "첨부파일 목록")
+	    private List<FileDto> files;
 	}
 	
 	@Getter
@@ -85,5 +91,34 @@ public class ClubBoardDto {
 	    @Override public String getIsNotice() { return isNotice; }
 	    @Override public String getExpiryDate() { return expiryDate; }
 	    @Override public String getUserEmpNo() { return userEmpNo; }
+	}
+	
+	/**
+     * 첨부파일 정보를 담기 위한 DTO
+     */
+	@Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PUBLIC)
+    @Schema(description = "첨부파일 상세 정보")
+	public static class FileDto {
+		@Schema(description = "문서 번호")
+        private Long docNo;
+        
+        @Schema(description = "원본 파일명")
+        private String docFileNm;
+        
+        @Schema(description = "이미지 미리보기/보기 URL")
+        private String displayUrl;
+        
+        @Schema(description = "파일 다운로드 URL")
+        private String downloadUrl;
+        
+        @Schema(description = "파일 확장자")
+        private String fileExt;
+        
+        @Schema(description = "파일 크기")
+        private Long fileSize;
 	}
 }

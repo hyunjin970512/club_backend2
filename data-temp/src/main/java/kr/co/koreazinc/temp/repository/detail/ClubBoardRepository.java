@@ -3,7 +3,10 @@ package kr.co.koreazinc.temp.repository.detail;
 import static kr.co.koreazinc.temp.model.entity.account.QCoEmplBas.coEmplBas;
 import static kr.co.koreazinc.temp.model.entity.detail.QClubBoard.clubBoard;
 import static kr.co.koreazinc.temp.model.entity.detail.QClubComment.clubComment;
-
+import static kr.co.koreazinc.temp.model.entity.comm.QCommonDoc.commonDoc;
+import static kr.co.koreazinc.temp.model.entity.comm.QCommonMappingDoc.commonMappingDoc;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +50,8 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
      * 게시글 리스트 조회
      */
    public <T> List<T> selectClubPostsList(Class<T> type, Integer clubId) {
+	   String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+	   
     	return queryFactory
                 .select(Projections.bean(type,
                         clubBoard.boardId,
@@ -64,8 +69,12 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
                 .leftJoin(coEmplBas).on(coEmplBas.empNo.eq(clubBoard.createUser))
                 // 댓글 조인 (CB.board_id = CC.board_id)
                 .leftJoin(clubComment).on(clubComment.clubBoard.boardId.eq(clubBoard.boardId).and(clubComment.deleteYn.eq("N")))
-                .where(clubBoard.clubId.eq(clubId)
-                        .and(clubBoard.deleteYn.eq("N")))
+                .where(
+            			clubBoard.clubId.eq(clubId), 
+                        clubBoard.deleteYn.eq("N"),
+                        // 공지 종료일(noticeDt)이 현재 시간보다 이후(goe)이거나, 기간 제한이 없는 경우(isNull)
+                        clubBoard.noticeDt.goe(today).or(clubBoard.noticeDt.isNull())
+                )
                 .groupBy(clubBoard.boardId, coEmplBas.nameKo, coEmplBas.positionCd)
                 .orderBy(clubBoard.createDate.desc())
                 .fetch();
@@ -131,9 +140,6 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
    }
    
    /**
-    * 게시글 상세보기
-    */
-   /**
     * 게시글 상세 조회 (Fluent API 방식)
     */
    public <T> T selectClubPostDetail(Class<T> type, Integer boardId) {
@@ -156,5 +162,28 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
 	            .where(clubBoard.boardId.eq(boardId)
 	                    .and(clubBoard.deleteYn.eq("N")))
 	            .fetchOne();
+   }
+   
+   /**
+    * 첨부파일 목록 조회
+    */
+   public <T> List<T> selectPostFiles(Class<T> type, Long boardId) {
+	   return queryFactory
+	            .select(Projections.bean(type,
+	                    commonDoc.docNo,
+	                    commonDoc.docFileNm,    // DTO의 docFileNm 필드와 매핑
+	                    commonDoc.createUser,   // 엔티티에 있는 필드들을 추가로 매핑 가능
+	                    commonDoc.createDate
+	                    // 만약 DTO의 originNm 필드에 파일명을 넣고 싶다면 아래처럼 별칭 사용
+	                    // commonDoc.docFileNm.as("originNm") 
+	            ))
+	            .from(commonDoc)
+	            .join(commonMappingDoc).on(commonDoc.docNo.eq(commonMappingDoc.docNo))
+	            .where(
+	                    commonMappingDoc.refId.eq(boardId), 
+	                    commonMappingDoc.deleteYn.eq("N"),
+	                    commonDoc.deleteYn.eq("N")
+	            )
+	            .fetch();
    }
 }

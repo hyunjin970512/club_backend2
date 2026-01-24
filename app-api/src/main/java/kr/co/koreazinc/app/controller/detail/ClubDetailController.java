@@ -200,6 +200,16 @@ public class ClubDetailController {
     	return ResponseEntity.ok(list);
     }
     
+    @Operation(summary = "동호회 댓글 저장")
+    @PostMapping("/posts/{boardId}/comment/save")
+    public ResponseEntity<?> addComment(@PathVariable("boardId") Long boardId, @RequestBody ClubCommentDto dto, @ModelAttribute("loginEmpNo") String empNo) {
+    	dto.setBoardId(boardId.intValue());
+    	dto.setCreateUser(empNo);
+    	dto.setUpdateUser(empNo);
+    	clubDetailService.saveComment(dto);
+    	return ResponseEntity.ok().body(Map.of("success", true));
+    }
+    
     @Operation(summary = "동호회 게시글 수정")
     @PostMapping("/{clubId}/posts/{boardId}")
     public ResponseEntity<?> updatePost(

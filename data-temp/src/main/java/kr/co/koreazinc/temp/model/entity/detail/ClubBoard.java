@@ -1,5 +1,6 @@
 package kr.co.koreazinc.temp.model.entity.detail;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,9 +85,9 @@ public class ClubBoard{
         default String getNoticeDt() { return null; }
         default String getDeleteYn() { return "N"; }
         default String getCreateUser() { return null; }
-        default java.time.LocalDateTime getCreateDate() { return null; }
+        default LocalDateTime getCreateDate() { return null; }
         default String getUpdateUser() { return null; }
-        default java.time.LocalDateTime getUpdateDate() { return null; }
+        default LocalDateTime getUpdateDate() { return null; }
         default int getViewCnt() { return 0; }
         default int getRecommendCnt() { return 0; }
         default String getUserEmpNo() { return null; } 

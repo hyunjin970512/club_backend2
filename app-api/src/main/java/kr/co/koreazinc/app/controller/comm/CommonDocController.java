@@ -62,21 +62,44 @@ public class CommonDocController {
     /**
      * 파일 다운로드
      * @param docNo 문서 번호
+     * @param mode  "view"인 경우 브라우저에서 직접 열기(이미지 등), 그 외에는 다운로드
      */
     @GetMapping("/download/{docNo}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable Long docNo) {
+    public ResponseEntity<byte[]> downloadFile(
+    		@PathVariable(name = "docNo") Long docNo,
+    		@RequestParam(name = "mode", defaultValue = "download") String mode) {
+    	
     	CommonDoc doc = commonDocRepository.selectQuery()
                 .eqDocNo(docNo)
                 .fetchOne();
+    	
+    	if (doc == null || doc.getDocFileData() == null) {
+            return ResponseEntity.notFound().build();
+        }
     	
     	// 파일명 인코딩 (공백 처리 포함)
         String encodedFileName = URLEncoder.encode(doc.getDocFileNm(), StandardCharsets.UTF_8)
                 .replaceAll("\\+", "%20");
         
+        // mode가 view이면 inline(미리보기), 아니면 attachment(다운로드)
+        String contentDisposition = "view".equals(mode) ? "inline" : "attachment";
+        
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + encodedFileName + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition + "; filename=\"" + encodedFileName + "\"")
+                .contentType(determineMediaType(doc.getDocFileNm()))
                 .contentLength(doc.getDocFileData().length)
                 .body(doc.getDocFileData());
+    }
+    
+    // 파일 확장자에 따라 MediaType을 결정하는 헬퍼 메서드
+    private MediaType determineMediaType(String fileName) {
+        String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        switch (extension) {
+            case "png": return MediaType.IMAGE_PNG;
+            case "jpg": case "jpeg": return MediaType.IMAGE_JPEG;
+            case "gif": return MediaType.IMAGE_GIF;
+            case "pdf": return MediaType.APPLICATION_PDF;
+            default: return MediaType.APPLICATION_OCTET_STREAM;
+        }
     }
 }

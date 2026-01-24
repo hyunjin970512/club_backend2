@@ -195,6 +195,19 @@ public class ClubDetailService {
 			log.warn("조회 권한 없음 또는 게시글 없음: clubId={}, boardId={}", clubId, boardId);
 			return null;
 		}
+		
+		// 첨부파일 조회
+		List<ClubBoardDto.FileDto> files = clubBoardRepository.selectPostFiles(ClubBoardDto.FileDto.class, boardId.longValue());
+		
+		files.forEach(file -> {
+			// 이미지를 보여줄 경로 (mode = view)
+			file.setDisplayUrl("/api/common/doc/download/" + file.getDocNo() + "?mode=view");
+			// 파일을 다운로드할 경로 (기본값 download)
+	        file.setDownloadUrl("/api/common/doc/download/" + file.getDocNo());
+		});
+		
+		detail.setFiles(files);
+		
 		return detail;
 	}
 	
@@ -206,4 +219,11 @@ public class ClubDetailService {
 		return clubCommentRepository.selectCommentList(ClubCommentDto.class, boardId);
 	}
 	
+	/**
+     * 동호회 댓글 작성
+     */
+	@Transactional
+	public void saveComment(ClubCommentDto dto) {
+		clubCommentRepository.insert(dto);
+	}
 }
