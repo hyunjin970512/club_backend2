@@ -226,4 +226,20 @@ public class ClubDetailService {
 	public void saveComment(ClubCommentDto dto) {
 		clubCommentRepository.insert(dto);
 	}
+	
+	/**
+     * 동호회 댓글 수정
+     */
+	@Transactional
+	public void updateComment(Long boardId, ClubCommentDto dto) {
+		clubCommentRepository.updateComment(boardId, dto.getCommentId(), dto.getContent(), dto.getUpdateUser());
+	}
+	
+	/**
+     * 동호회 댓글 삭제
+     */
+	@Transactional
+	public void deleteComment(Long boardId, ClubCommentDto dto) {
+		clubCommentRepository.deleteComment(boardId, dto.getCommentId(), dto.getUpdateUser());
+	}
 }

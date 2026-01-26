@@ -128,7 +128,7 @@ public class ClubBoard{
         
         // 게시글에 달린 댓글들도 모두 Soft Delete 처리
         if (this.comments != null) {
-            this.comments.forEach(c -> c.softDelete(updateUser));
+            this.comments.forEach(c -> c.deleteComment(updateUser));
         }
     }
     

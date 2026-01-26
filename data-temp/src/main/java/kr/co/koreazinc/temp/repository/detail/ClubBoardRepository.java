@@ -31,6 +31,8 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
      * 공지사항 리스트 조회
      */
     public <T> List<T> selectNoticeList(Class<T> type, Integer clubId) {
+    	String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    	
         return queryFactory
                 .select(Projections.bean(type,
                         clubBoard.boardId.as("noticeBoardId"),
@@ -38,9 +40,10 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
                         clubBoard.content.as("noticeContent")
                 ))
                 .from(clubBoard)
-                .where(clubBoard.clubId.eq(clubId)
-                        .and(clubBoard.noticeYn.eq("Y"))
-                        .and(clubBoard.deleteYn.eq("N")))
+                .where(clubBoard.clubId.eq(clubId),
+                        clubBoard.noticeYn.eq("Y"),
+                        clubBoard.deleteYn.eq("N"),
+                        clubBoard.noticeDt.goe(today).or(clubBoard.noticeDt.isNull()))
                 .orderBy(clubBoard.createDate.desc())
                 .limit(3)
                 .fetch();
@@ -155,6 +158,7 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
 	                    clubBoard.createDate,
 	                    clubBoard.viewCnt,
 	                    clubBoard.recomendCnt,
+	                    coEmplBas.positionCd.as("authorPosition"),
 	                    coEmplBas.nameKo.as("authorNm")
 	            ))
 	            .from(clubBoard)

@@ -21,4 +21,5 @@ public class ClubCommentDto implements ClubComment.Getter {
     private LocalDateTime createDate;
     private String updateUser;
     private LocalDateTime updateDate;
+    private String deleteYn;
 }

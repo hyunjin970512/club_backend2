@@ -1,5 +1,7 @@
 package kr.co.koreazinc.temp.model.entity.detail;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -69,9 +72,22 @@ public class ClubComment {
         void setRecommendCnt(Integer recommendCnt);
     }
     
-    public void softDelete(String userEmpNo) {
+    /**
+     * 댓글 수정
+     */
+    @Transactional
+    public void updateComment(String content, String userEmpNo) {
+    	this.content = content;
+    	this.updateUser = userEmpNo;
+    	this.updateDate = LocalDateTime.now();
+    }
+    
+    /**
+     * 댓글 삭제
+     */
+    public void deleteComment(String userEmpNo) {
     	this.deleteYn = "Y";
     	this.updateUser = userEmpNo;
-    	this.updateDate = java.time.LocalDateTime.now();
+    	this.updateDate = LocalDateTime.now();
     }
 }

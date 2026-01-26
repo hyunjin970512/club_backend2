@@ -210,6 +210,38 @@ public class ClubDetailController {
     	return ResponseEntity.ok().body(Map.of("success", true));
     }
     
+    @Operation(summary = "동호회 댓글 수정")
+    @PostMapping("/posts/{boardId}/comment/{commentId}/update")
+    public ResponseEntity<?> updateComment(
+    		@PathVariable("boardId") Long boardId, 
+    		@PathVariable("commentId") Long commentId,
+    		@RequestBody ClubCommentDto dto,
+    		@ModelAttribute("loginEmpNo") String empNo) {
+    	// dto 정보 세팅
+    	dto.setCommentId(commentId);
+    	dto.setBoardId(boardId.intValue());
+    	dto.setUpdateUser(empNo);
+    	
+    	clubDetailService.updateComment(boardId, dto);
+    
+    	return ResponseEntity.ok(Map.of("success", true));
+    }
+    
+    @Operation(summary = "동호회 댓글 삭제")
+    @PostMapping("/posts/{boardId}/comment/{commentId}/delete")
+    public ResponseEntity<?> deleteComment(
+    		@PathVariable("boardId") Long boardId, 
+    		@PathVariable("commentId") Long commentId,
+    		@ModelAttribute("loginEmpNo") String empNo) {
+    	ClubCommentDto dto = new ClubCommentDto();
+    	dto.setCommentId(commentId);
+    	dto.setUpdateUser(empNo);
+    	
+    	clubDetailService.deleteComment(boardId, dto);
+    	
+    	return ResponseEntity.ok(Map.of("success", true)); 
+    }
+    
     @Operation(summary = "동호회 게시글 수정")
     @PostMapping("/{clubId}/posts/{boardId}")
     public ResponseEntity<?> updatePost(
