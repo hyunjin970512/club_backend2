@@ -1,3 +1,10 @@
+# push test HJLOG
+club:
+  push:
+    base-url: "https://app-admin-dev.sorin.co.kr"
+    co-cd: "kz"
+    club-task-id: "e18c964b-521f-49fc-be52-d98b90cd0ecd"
+
 server:
   port: 8081
   forward-headers-strategy: framework
@@ -9,48 +16,47 @@ springdoc:
     enabled: true
 
 spring:
-  devtools: # devtools
+  devtools:
     livereload:
       enabled: false
     restart:
       enabled: true
 
-oauth:
-  client-id: 79983b8b-d229-4da3-b615-3cc4d23372b5
-  login-url: https://auth-dev.koreazinc.co.kr/oauth2/login
-  token-url: https://auth-dev.koreazinc.co.kr/v2/oauth/token
-  userinfo-url: https://auth-dev.koreazinc.co.kr/v2/user/me
+  security:
+    oauth2:
+      provider:
+        auth:
+          base-url: https://auth-dev.koreazinc.co.kr
+          authorization-url: /oauth2/login
+          token-url: /v2/oauth/token
+          user-info-url: /v2/user/me
+          scope: "openid profile"
+      client:
+        id: 79983b8b-d229-4da3-b615-3cc4d23372b5
+        # secret 필요하면 여기에 추가
+        # secret: ${OAUTH_CLIENT_SECRET}
+        redirect:
+          login-url: "{URL}/oauth/callback"
 
-# 백엔드가 프론트로 보낼 주소
 app:
   frontend-base-url: http://localhost:3000
 
 ---
-# [1. 로컬 환경]
 spring:
   config:
     activate:
       on-profile: local
 
-oauth:
-  redirect-uri: http://localhost:8081/oauth/callback
-
 app:
   frontend-base-url: http://localhost:3000
 
 ---
-# [2. IP 접속 테스트 환경]
 spring:
   config:
     activate:
       on-profile: dev
 
-oauth:
-  #redirect-uri: http://172.20.27.116:8081/oauth/callback
-  redirect-uri: http://172.20.27.4:8081/oauth/callback
-
 app:
-  #frontend-base-url: http://172.20.27.116:3000
   frontend-base-url: http://172.20.27.4:3000
 
 logging:
@@ -59,3 +65,9 @@ logging:
     kr.co.koreazinc: debug
     org.springframework.security: debug
     org.hibernate.SQL: debug
+
+webpush:
+  vapid:
+    publicKey: "BMstnpMBC8koq-xMrO47VTNaFdzwxYsmwu1b58ThD4kxnuugYx00a2rhezTkXs7R9PqpCKoHUW2jWh19WxW5ap0"
+    privateKey: "Z3Ha1XMBjU_I3n-rIuKcoeBzoZe65393xXbbdOQtVO4"
+    subject: "mailto:admin@club.local"

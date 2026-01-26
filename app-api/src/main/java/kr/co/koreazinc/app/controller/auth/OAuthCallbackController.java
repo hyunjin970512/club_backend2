@@ -5,13 +5,13 @@ import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import kr.co.koreazinc.spring.security.property.OAuth2Property;
 import kr.co.koreazinc.spring.utility.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,31 +25,31 @@ public class OAuthCallbackController {
   private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
   private static final String ACCESS_TOKEN_COOKIE_LEGACY = "ACCESS-TOKEN";
 
-  @Value("${oauth.client-id}")
-  private String clientId;
-
-  @Value("${oauth.redirect-uri}")
-  private String redirectUri;
-
-  @Value("${oauth.token-url}")
-  private String tokenUrl;
-
-  @Value("${oauth.userinfo-url}")
-  private String userinfoUrl;
-
   private final RestTemplate restTemplate;
+  private final OAuth2Property oauth2;
 
   @GetMapping("/callback")
   public ResponseEntity<Void> callback(@RequestParam("code") String code, HttpServletRequest request) {
 
     log.info("code={}", code);
 
+    OAuth2Property.Provider p = oauth2.getProvider(OAuth2Property.Provider.AUTH);
+
+    // ✅ redirect_uri는 yml의 "{URL}/oauth/callback" 기반으로 request로 생성
+    String redirectUri = oauth2.getClient().getRedirect().getLoginURL(request);
+
+    // ✅ token/userinfo URL 만들기 (base-url + path)
+    String tokenUrl = p.getBaseUrl() + p.getTokenUrl();
+    String userinfoUrl = p.getBaseUrl() + p.getUserInfoUrl();
+
     // 1) code -> 회사 access_token
     MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
     form.add("grant_type", "authorization_code");
     form.add("code", code);
     form.add("redirect_uri", redirectUri);
-    form.add("client_id", clientId);
+    form.add("client_id", oauth2.getClient().getId());
+    // secret 필요한 SSO면 여기 추가해야 함 (현재 형님은 기존에도 안 넣었으니 일단 생략)
+    // form.add("client_secret", oauth2.getClient().getSecret());
 
     HttpHeaders h = new HttpHeaders();
     h.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -76,25 +76,23 @@ public class OAuthCallbackController {
 
     log.info("userinfo keys={}", me == null ? null : me.keySet());
 
-    // ✅ 여기서 empNo는 job[0].empNo 에서 뽑는다
     String userId = toNonNullString(me == null ? null : me.get("userId"));
     String empNo = extractEmpNoFromJob(me);
 
     log.info("userId={}, empNo={}", userId, empNo);
 
     if (empNo == null) {
-      // empNo 없으면 우리 서비스는 인증 불가
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // 3) 우리 JWT 발급 (empNo + userId 같이 넣어두면 나중에 유용)
+    // 3) 우리 JWT 발급
     String myJwt = JwtUtils.createToken(
         Map.of("empNo", empNo, "userId", userId == null ? "" : userId),
         JwtUtils.getPrivateKey(),
         2 * 60 * 60 * 1000L
     );
 
-    // 4) 쿠키 저장: ACCESS_TOKEN으로 통일
+    // 4) 쿠키 저장
     ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, myJwt)
         .httpOnly(true)
         .secure(false)
@@ -103,7 +101,6 @@ public class OAuthCallbackController {
         .maxAge(60 * 60 * 2)
         .build();
 
-    // 레거시 쿠키 청소
     ResponseCookie legacyCleanup = ResponseCookie.from(ACCESS_TOKEN_COOKIE_LEGACY, "")
         .httpOnly(true)
         .secure(false)
@@ -112,14 +109,12 @@ public class OAuthCallbackController {
         .maxAge(0)
         .build();
 
-    //redirectUrl
+    // ✅ 프론트 리다이렉트 (형님 원래 로직 유지)
     String reqHost = request.getHeader("Host");
     if (reqHost == null || reqHost.isBlank()) reqHost = request.getServerName();
-
-    reqHost = reqHost.replaceAll(":\\d+$", ""); // 포트 제거
+    reqHost = reqHost.replaceAll(":\\d+$", "");
 
     String redirectUrl = "http://" + reqHost + ":3000/main";
-
 
     HttpHeaders out = new HttpHeaders();
     out.add(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -142,7 +137,6 @@ public class OAuthCallbackController {
     if (!(first instanceof Map)) return null;
 
     Map<String, Object> job0 = (Map<String, Object>) first;
-    // ✅ JSON 기준 키가 "empNo"
     return toNonNullString(job0.get("empNo"));
   }
 

@@ -1,17 +1,20 @@
 package kr.co.koreazinc.app.controller.auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 
+import kr.co.koreazinc.spring.security.property.OAuth2Property;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -20,26 +23,35 @@ public class AuthController {
     private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
     private static final String ACCESS_TOKEN_COOKIE_LEGACY = "ACCESS-TOKEN";
 
-    @Value("${oauth.client-id}")
-    private String clientId;
-
-    @Value("${oauth.redirect-uri}")
-    private String redirectUri;
-
-    @Value("${oauth.login-url}")
-    private String loginUrl;
+    private final OAuth2Property oauth2;
 
     @GetMapping("/login")
-    public void ssoLogin(HttpServletResponse response) throws IOException {
+    public void ssoLogin(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        // provider: auth
+        OAuth2Property.Provider p = oauth2.getProvider(OAuth2Property.Provider.AUTH);
+
+        // ✅ redirect_uri 는 {URL} 기반으로 자동 생성
+        String redirectUri = oauth2.getClient().getRedirect().getLoginURL(request);
+
+        // ✅ authorization endpoint (baseUrl + authorizationUrl)
+        String authorizeUrl = p.getBaseUrl() + p.getAuthorizationUrl();
+
         String authUrl = UriComponentsBuilder
-                .fromHttpUrl(loginUrl)
+                .fromHttpUrl(authorizeUrl)
                 .queryParam("response_type", "code")
-                .queryParam("client_id", clientId)
+                .queryParam("client_id", oauth2.getClient().getId())
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("prompt", "login")
                 .build()
                 .toUriString();
 
+        
+        log.info("authorizeUrl={}", authorizeUrl);
+        log.info("redirectUri={}", redirectUri);
+        log.info("authUrl={}", authUrl);
+        
+        
         response.sendRedirect(authUrl);
     }
 
