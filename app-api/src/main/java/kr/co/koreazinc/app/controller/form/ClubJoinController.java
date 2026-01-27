@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/clubs")
+@RequestMapping("/api/club")
 public class ClubJoinController {
 
     private final ClubJoinService clubJoinService;

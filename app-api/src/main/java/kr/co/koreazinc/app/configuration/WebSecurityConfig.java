@@ -50,8 +50,15 @@ public class WebSecurityConfig {
                     "/api/auth/login",
                     "/api/clubs/**",
                     "/oauth/callback",
-                    "/api/common/doc/download/**"
+                    "/api/common/doc/download/**",
+                    "/api/club/join/check/**",
+                    "/api/inbox/stream"
                 ).permitAll()
+                
+                .requestMatchers(
+                		"/api/inbox/**"
+                		).authenticated()
+                
                 .requestMatchers(
                 		"/api/**",
                 		"/main/**",

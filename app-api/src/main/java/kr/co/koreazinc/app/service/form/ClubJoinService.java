@@ -1,17 +1,26 @@
 package kr.co.koreazinc.app.service.form;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.co.koreazinc.app.authentication.TokenAuthenticationProvider;
 import kr.co.koreazinc.app.model.form.ClubJoinRequestDto;
+import kr.co.koreazinc.app.model.push.PushType;
+import kr.co.koreazinc.app.service.push.PushFacade;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
+import kr.co.koreazinc.temp.repository.form.ClubInfoRepository;
 import kr.co.koreazinc.temp.repository.form.ClubJoinRequestRepository;
 import kr.co.koreazinc.temp.repository.form.ClubRepository;
+import kr.co.koreazinc.temp.repository.main.CoEmplBasRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClubJoinService {
@@ -21,6 +30,8 @@ public class ClubJoinService {
     private final ClubRepository clubRepository;
     private final ClubJoinRequestRepository clubJoinRequestRepository;
     
+    private final ClubInfoRepository clubInfoRepository; // clubId -> 마스터
+    private final PushFacade pushFacade;
     
     @Transactional(readOnly = true)
     public ClubJoinRequestDto.JoinCheckResponse checkJoinState(String empNo, Long clubId) {
@@ -100,6 +111,43 @@ public class ClubJoinService {
         } catch (DataIntegrityViolationException e) {
             throw new IllegalStateException("이미 가입 신청한 동호회입니다.");
         }
+        
+        Long requestId = entity.getRequestId();
+        
+		try {
+				var club = clubInfoRepository.findById(clubId).orElse(null);
+				log.info("[JOIN-PUSH] clubId={}, clubFound={}, master={}",
+				        clubId, club != null, club == null ? null : club.getClubMasterId());
+				if (club != null) {
+					String masterEmpNo = club.getClubMasterId(); // ✅ 필드명 맞춰
+					if (masterEmpNo != null && !masterEmpNo.isBlank() && !masterEmpNo.equals(empNo)) {
+						
+						// 템플릿 데이터
+						Map<String, Object> data = Map.of(
+							"clubId", clubId,
+							"requestId", requestId,
+							"clubNm", club.getClubNm(),          // ✅ 필드명 맞춰
+							"requesterEmpNo", empNo
+						);
+						
+						log.info("[JOIN-PUSH] sending type={}, target={}, data={}",
+				                PushType.CLUB_JOIN_REQUEST, masterEmpNo, data);
+						
+						pushFacade.send(
+							PushType.CLUB_JOIN_REQUEST,
+							List.of(masterEmpNo),
+							data,
+							empNo // createdByEmpNo
+						);
+						
+						log.info("[JOIN-PUSH] send called");
+						
+					}
+				}
+		} catch (Exception e) {
+			// 푸시 실패가 가입신청을 막으면 안 됨
+			log.error("[JOIN-PUSH] failed", e);
+		}
 
         return entity.getRequestId();
     }
