@@ -29,6 +29,10 @@ public class CommonDocRepository extends AbstractJpaRepository<CommonDoc, Long> 
             this.addField("docFileNm", commonDoc.docFileNm);
             this.addField("createUser", commonDoc.createUser);
             this.addField("createDate", commonDoc.createDate);
+            this.addField("filePath", commonDoc.filePath);
+            this.addField("saveFileNm", commonDoc.saveFileNm); 
+            this.addField("createUser", commonDoc.createUser);
+            this.addField("createDate", commonDoc.createDate);
 		}
 		
 		public SelectQuery<DTO> eqDocNo(Long docNo) {
@@ -40,6 +44,14 @@ public class CommonDocRepository extends AbstractJpaRepository<CommonDoc, Long> 
             query.where(commonDoc.jobSeCode.eq(jobSeCode));
             return this;
         }
+	}
+	
+	// ID로 단건 조회 (다운로드용)
+	public CommonDoc selectById(Long docNo) {
+	    return queryFactory.selectFrom(commonDoc)
+	            .where(commonDoc.docNo.eq(docNo)
+	              .and(commonDoc.deleteYn.eq("N"))) // 삭제되지 않은 파일만
+	            .fetchOne();
 	}
 	
 	// 전체 엔티티 조회

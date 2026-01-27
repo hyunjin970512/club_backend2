@@ -1,8 +1,11 @@
 package kr.co.koreazinc.app.controller.comm;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +25,9 @@ import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.temp.model.entity.comm.CommonDoc;
 import kr.co.koreazinc.temp.repository.comm.CommonDocRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/common/doc")
@@ -69,26 +74,34 @@ public class CommonDocController {
     		@PathVariable(name = "docNo") Long docNo,
     		@RequestParam(name = "mode", defaultValue = "download") String mode) {
     	
-    	CommonDoc doc = commonDocRepository.selectQuery()
-                .eqDocNo(docNo)
-                .fetchOne();
+    	CommonDoc doc = commonDocRepository.selectById(docNo);
     	
-    	if (doc == null || doc.getDocFileData() == null) {
-            return ResponseEntity.notFound().build();
-        }
+    	if (doc == null) {
+    		return ResponseEntity.notFound().build();
+    	}
     	
-    	// 파일명 인코딩 (공백 처리 포함)
-        String encodedFileName = URLEncoder.encode(doc.getDocFileNm(), StandardCharsets.UTF_8)
-                .replaceAll("\\+", "%20");
-        
-        // mode가 view이면 inline(미리보기), 아니면 attachment(다운로드)
-        String contentDisposition = "view".equals(mode) ? "inline" : "attachment";
-        
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition + "; filename=\"" + encodedFileName + "\"")
-                .contentType(determineMediaType(doc.getDocFileNm()))
-                .contentLength(doc.getDocFileData().length)
-                .body(doc.getDocFileData());
+    	try {
+    		// 서비스를 통해 파일 서버로부터 InputStream 획득 후 byte[]로 전환
+    		InputStream inputStream = commonDocService.downloadFile(docNo);
+    		byte[] fileData = inputStream.readAllBytes();
+    		inputStream.close();
+    		
+    		// 파일 인코딩
+    		String encodedFileName = URLEncoder.encode(doc.getDocFileNm(), StandardCharsets.UTF_8)
+    	                .replaceAll("\\+", "%20");
+    		
+    		// 모드 설정 (미리보기 vs 다운로드)
+    		String contentDisposition = "view".equals(mode) ? "inline" : "attachment";
+    		
+    		return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition + "; filename=\"" + encodedFileName + "\"")
+                    .contentType(MediaType.parseMediaType(Files.probeContentType(Paths.get(doc.getDocFileNm()))))
+                    .contentLength(fileData.length)
+                    .body(fileData);
+    	} catch (IOException e) {
+    		log.error("파일 다운로드 중 에러 발생: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+    	}
     }
     
     // 파일 확장자에 따라 MediaType을 결정하는 헬퍼 메서드

@@ -117,3 +117,5 @@ spring:
         redirect:
           login-url: '{URL}/authorize'
           logout-url: '{URL}'
+          id: 79983b8b-d229-4da3-b615-3cc4d23372b5
+          secret: ocz8Q~.NhjnNsz5zkdmD5bkRizGsOUUb1Bsxzbcr

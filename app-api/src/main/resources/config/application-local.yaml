@@ -35,6 +35,7 @@ spring:
         id: 79983b8b-d229-4da3-b615-3cc4d23372b5
         # secret 필요하면 여기에 추가
         # secret: ${OAUTH_CLIENT_SECRET}
+        secret: ocz8Q~.NhjnNsz5zkdmD5bkRizGsOUUb1Bsxzbcr
         redirect:
           login-url: "{URL}/oauth/callback"
 

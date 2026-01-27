@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,12 +14,15 @@ import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
+import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
+import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
 import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubCommentRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubDetailRepository;
+import kr.co.koreazinc.temp.repository.detail.ClubJoinRequestRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,6 +36,7 @@ public class ClubDetailService {
 	private final ClubBoardRepository clubBoardRepository;
 	private final ClubCommentRepository clubCommentRepository;
 	private final CommonDocService commonDocService;
+	private final ClubJoinRequestRepository clubJoinRequestRepository;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -69,6 +74,17 @@ public class ClubDetailService {
 	        map.put("commentCnt", post.getCommentCnt());
 	        map.put("recommendCnt", post.getRecomendCnt());
 	        map.put("viewCnt", post.getViewCnt());
+	        
+	        // 첨부파일 조회
+			List<ClubBoardDto.FileDto> files = clubBoardRepository.selectPostFiles(ClubBoardDto.FileDto.class, post.getBoardId().longValue());
+			files.forEach(file -> {
+				// 이미지를 보여줄 경로 (mode = view)
+				file.setDisplayUrl("/api/common/doc/download/" + file.getDocNo() + "?mode=view");
+				// 파일을 다운로드할 경로 (기본값 download)
+		        file.setDownloadUrl("/api/common/doc/download/" + file.getDocNo());
+			});
+			
+			map.put("files", files);
 	        return map;
 	    }).collect(Collectors.toList());
 	}
@@ -242,4 +258,12 @@ public class ClubDetailService {
 	public void deleteComment(Long boardId, ClubCommentDto dto) {
 		clubCommentRepository.deleteComment(boardId, dto.getCommentId(), dto.getUpdateUser());
 	}
+	
+	/**
+     * 가입 요청 리스트 조회
+     */
+	@Transactional
+	public List<ClubJoinRequestDto> getClubRequestList(Integer clubId) {
+		return clubJoinRequestRepository.findRequestList(ClubJoinRequestDto.class, clubId);
+    }
 }

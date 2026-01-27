@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -52,4 +53,17 @@ public class ClubUserInfo {
 
     @Column(name = "update_date")
     private LocalDateTime updateDate;
+    
+    @Builder
+    public ClubUserInfo(Long clubId, String empNo, String userRoleCd, String status, String createUser) {
+    	this.clubId = clubId;
+        this.empNo = empNo;
+        this.userRoleCd = userRoleCd;
+        this.joinDate = LocalDate.now();
+        this.status = status;
+        this.createUser = createUser;
+        this.createDate = LocalDateTime.now();
+        this.updateUser = createUser;
+        this.updateDate = LocalDateTime.now();
+    }
 }

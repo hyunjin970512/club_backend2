@@ -43,4 +43,10 @@ public class ClubJoinRequest {
 
     @Column(name = "update_date")
     private LocalDateTime updateDate;
+    
+    public void updateStatus(String status, String updateUser) {
+    	this.status = status;
+    	this.updateUser = updateUser;
+    	this.updateDate = LocalDateTime.now();
+    }
 }

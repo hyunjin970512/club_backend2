@@ -36,8 +36,11 @@ public class CommonDoc {
 	@Column(name = "doc_file_nm")
     private String docFileNm;
 	
-    @Column(name = "doc_file_data")
-    private byte[] docFileData;
+	@Column(name = "file_path")
+    private String filePath;
+	
+	@Column(name = "save_file_nm")
+    private String saveFileNm;
     
     @Column(name = "create_user")
     private String createUser;

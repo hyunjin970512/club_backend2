@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -21,13 +23,14 @@ import org.springframework.web.multipart.MultipartFile;
 import com.github.loki4j.client.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
+import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
 import kr.co.koreazinc.app.service.detail.ClubDetailService;
-import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
-import kr.co.koreazinc.temp.model.entity.detail.ClubFeeInfo;
+import kr.co.koreazinc.app.service.security.dto.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -39,16 +42,12 @@ public class ClubDetailController {
     
     @Operation(summary = "로그인 사번")
     @ModelAttribute("loginEmpNo")
-    public String getLoginEmpNo(Authentication authentication) {
-    	if (authentication != null && authentication.isAuthenticated()) {
-            Object principal = authentication.getPrincipal();
-            
-            if(principal instanceof UserDetails) {
-            	return ((UserDetails) principal).getUsername();
-            }
-            return principal.toString();
-        }
-		return null;
+    public String getLoginEmpNo(@AuthenticationPrincipal UserPrincipal principal) {
+    	if (principal != null) {
+    		return principal.getEmpNo();
+    	} else {
+    		return null;
+    	}
     }
     
     @Operation(summary = "동호회 기본 정보 조회")
@@ -248,6 +247,7 @@ public class ClubDetailController {
     		@PathVariable("clubId") Long clubId,
     		@PathVariable("boardId") Long boardId, 
     		@RequestPart("data") ClubBoardDto.Get dto,
+    		@RequestPart(value = "files", required = false) List<MultipartFile> files,
     		@ModelAttribute("loginEmpNo") String empNo) {
     	try {
     		clubDetailService.updatePost(dto, empNo);
@@ -261,5 +261,11 @@ public class ClubDetailController {
     		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(Map.of("success", false, "message", "수정 중 오류 발생: " + e.getMessage()));
     	}
+    }
+    
+    @Operation(summary = "가입요청 조회")
+    @GetMapping("/{clubId}/request")
+    public List<ClubJoinRequestDto> getRequests(@PathVariable("clubId") Integer clubId) {
+        return clubDetailService.getClubRequestList(clubId);
     }
 }
