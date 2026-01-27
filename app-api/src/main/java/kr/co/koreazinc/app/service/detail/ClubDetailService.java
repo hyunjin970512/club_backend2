@@ -79,9 +79,9 @@ public class ClubDetailService {
 			List<ClubBoardDto.FileDto> files = clubBoardRepository.selectPostFiles(ClubBoardDto.FileDto.class, post.getBoardId().longValue());
 			files.forEach(file -> {
 				// 이미지를 보여줄 경로 (mode = view)
-				file.setDisplayUrl("/api/common/doc/download/" + file.getDocNo() + "?mode=view");
+				file.setDisplayUrl("/api/common/doc/download/CB/" +file.getDocNo() + "?mode=view");
 				// 파일을 다운로드할 경로 (기본값 download)
-		        file.setDownloadUrl("/api/common/doc/download/" + file.getDocNo());
+		        file.setDownloadUrl("/api/common/doc/download/CB/" + file.getDocNo());
 			});
 			
 			map.put("files", files);
@@ -217,9 +217,9 @@ public class ClubDetailService {
 		
 		files.forEach(file -> {
 			// 이미지를 보여줄 경로 (mode = view)
-			file.setDisplayUrl("/api/common/doc/download/" + file.getDocNo() + "?mode=view");
+			file.setDisplayUrl("/api/common/doc/download/CB/" + file.getDocNo() + "?mode=view");
 			// 파일을 다운로드할 경로 (기본값 download)
-	        file.setDownloadUrl("/api/common/doc/download/" + file.getDocNo());
+	        file.setDownloadUrl("/api/common/doc/download/CB/" + file.getDocNo());
 		});
 		
 		detail.setFiles(files);
@@ -266,4 +266,18 @@ public class ClubDetailService {
 	public List<ClubJoinRequestDto> getClubRequestList(Integer clubId) {
 		return clubJoinRequestRepository.findRequestList(ClubJoinRequestDto.class, clubId);
     }
+	
+	/**
+	 * 가입 승인/거절 처리
+	 */
+	/* @Transactional
+	 public boolean updateJoinRequest(Map<String, Object> param) {
+		Long clubId = Long.valueOf(param.get("clubId").toString());
+		String requestEmpNo = (String) param.get("requestEmpNo");
+		String status = (String) param.get("status");
+		String updateUser = (String) param.get("updateUser");
+		
+		//ClubJoinRequest request = clubJoinRequestRepository.findByClubIdAndRequestUser(clubId, requestEmpNo);
+		
+	} */
 }

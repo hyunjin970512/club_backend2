@@ -8,10 +8,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.google.common.net.HttpHeaders;
 
+import io.swagger.v3.oas.annotations.Operation;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
+import kr.co.koreazinc.app.service.security.dto.UserPrincipal;
 import kr.co.koreazinc.temp.model.entity.comm.CommonDoc;
 import kr.co.koreazinc.temp.repository.comm.CommonDocRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +40,16 @@ public class CommonDocController {
 	
 	private final CommonDocService commonDocService;
     private final CommonDocRepository commonDocRepository;
+    
+    @Operation(summary = "로그인 사번")
+    @ModelAttribute("loginEmpNo")
+    public String getLoginEmpNo(@AuthenticationPrincipal UserPrincipal principal) {
+    	if (principal != null) {
+    		return principal.getEmpNo();
+    	} else {
+    		return null;
+    	}
+    }
     
     /**
      * 파일 업로드 (단건/다건 통합)
@@ -69,12 +84,13 @@ public class CommonDocController {
      * @param docNo 문서 번호
      * @param mode  "view"인 경우 브라우저에서 직접 열기(이미지 등), 그 외에는 다운로드
      */
-    @GetMapping("/download/{docNo}")
+    @GetMapping("/download/{jobSeCode}/{docNo}")
     public ResponseEntity<byte[]> downloadFile(
+    		@PathVariable(name = "jobSeCode") String jobSeCode,
     		@PathVariable(name = "docNo") Long docNo,
     		@RequestParam(name = "mode", defaultValue = "download") String mode) {
     	
-    	CommonDoc doc = commonDocRepository.selectById(docNo);
+    	CommonDoc doc = commonDocRepository.selectById(docNo, jobSeCode);
     	
     	if (doc == null) {
     		return ResponseEntity.notFound().build();
@@ -82,7 +98,7 @@ public class CommonDocController {
     	
     	try {
     		// 서비스를 통해 파일 서버로부터 InputStream 획득 후 byte[]로 전환
-    		InputStream inputStream = commonDocService.downloadFile(docNo);
+    		InputStream inputStream = commonDocService.downloadFile(docNo, jobSeCode);
     		byte[] fileData = inputStream.readAllBytes();
     		inputStream.close();
     		
@@ -104,15 +120,28 @@ public class CommonDocController {
     	}
     }
     
-    // 파일 확장자에 따라 MediaType을 결정하는 헬퍼 메서드
-    private MediaType determineMediaType(String fileName) {
-        String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-        switch (extension) {
-            case "png": return MediaType.IMAGE_PNG;
-            case "jpg": case "jpeg": return MediaType.IMAGE_JPEG;
-            case "gif": return MediaType.IMAGE_GIF;
-            case "pdf": return MediaType.APPLICATION_PDF;
-            default: return MediaType.APPLICATION_OCTET_STREAM;
+    /**
+     * 파일 삭제
+     * @param docNo 문서 번호
+     */
+    @PostMapping("/delete/{jobSeCode}/{docNo}")
+    public ResponseEntity<?> deleteFile(
+            @PathVariable("jobSeCode") String jobSeCode,
+            @PathVariable("docNo") Long docNo,
+            @ModelAttribute("loginEmpNo") String empNo) {
+    	try {
+    		boolean isDeleted = commonDocService.deleteFile(docNo, jobSeCode, empNo);
+    		
+    		if (isDeleted) {
+    			return ResponseEntity.ok(Map.of("success", true, "message", "정상적으로 삭제되었습니다."));
+    		} else {
+    			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    					.body(Map.of("success", false, "message", "삭제할 파일을 찾을 수 없습니다."));
+    		}
+    	} catch (Exception e) {
+            log.error("파일 삭제 중 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "서버 오류로 삭제에 실패했습니다."));
         }
     }
 }

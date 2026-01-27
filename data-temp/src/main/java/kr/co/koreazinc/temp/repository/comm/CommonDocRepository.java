@@ -1,5 +1,6 @@
 package kr.co.koreazinc.temp.repository.comm;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import static kr.co.koreazinc.temp.model.entity.comm.QCommonDoc.commonDoc;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,10 +48,13 @@ public class CommonDocRepository extends AbstractJpaRepository<CommonDoc, Long> 
 	}
 	
 	// ID로 단건 조회 (다운로드용)
-	public CommonDoc selectById(Long docNo) {
+	public CommonDoc selectById(Long docNo, String jobSeCode) {
 	    return queryFactory.selectFrom(commonDoc)
-	            .where(commonDoc.docNo.eq(docNo)
-	              .and(commonDoc.deleteYn.eq("N"))) // 삭제되지 않은 파일만
+	    		.where(
+                    commonDoc.docNo.eq(docNo),
+                    commonDoc.jobSeCode.eq(jobSeCode), // 업무 구분 코드 조건 추가
+                    commonDoc.deleteYn.eq("N")
+                )
 	            .fetchOne();
 	}
 	
@@ -79,4 +83,17 @@ public class CommonDocRepository extends AbstractJpaRepository<CommonDoc, Long> 
     public CommonDoc save(CommonDoc entity) {
         return super.save(entity);
     }
+	
+	// 파일 삭제
+	public void deleteFile(Long docNo, String jobSeCode, String empNo) {
+		queryFactory.update(commonDoc)
+			.set(commonDoc.deleteYn, "Y")
+			.set(commonDoc.updateUser, empNo)
+			.set(commonDoc.updateDate, LocalDateTime.now())
+			.where(
+				commonDoc.docNo.eq(docNo),
+				commonDoc.jobSeCode.eq(jobSeCode)
+			)
+			.execute();
+	}
 }

@@ -60,12 +60,16 @@ public class CommonDocService {
 	
 	
 	// 파일 다운로드
-	public InputStream downloadFile(Long docNo) throws IOException {
-		CommonDoc doc = commonDocRepository.selectById(docNo);
+	public InputStream downloadFile(Long docNo, String jobSeCode) throws IOException {
+		CommonDoc doc = commonDocRepository.selectById(docNo, jobSeCode);
 		
 		if(doc == null) {
 			throw new IOException("파일이 존재하지 않습니다. ID: " + docNo);
 		}
+		
+		if (doc.getFilePath() == null) {
+	        throw new IOException("파일 서버 경로 정보가 누락되었습니다.");
+	    }
 		
 		FileInfo file = FileInfo.builder()
 				.system("app")
@@ -75,5 +79,15 @@ public class CommonDocService {
 				.build();
 		
 		return FileUtils.remoteDownload(property.getCredential("file"), file);
+	}
+	
+	// 파일 삭제
+	@Transactional
+	public boolean deleteFile(Long docNo, String jobSeCode, String empNo) {
+		// 1. CO_COMMON_DOC 업데이트
+		commonDocRepository.deleteFile(docNo, jobSeCode, empNo);
+		// 2. CO_COMMON_MAPPING_DOC 업데이트
+        commonMappingDocRepository.deleteMapFile(docNo, empNo);
+        return true;
 	}
 }

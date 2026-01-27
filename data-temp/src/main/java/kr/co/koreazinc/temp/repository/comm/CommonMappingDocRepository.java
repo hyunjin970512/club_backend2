@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import static kr.co.koreazinc.temp.model.entity.comm.QCommonMappingDoc.commonMappingDoc;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -55,5 +57,14 @@ public class CommonMappingDocRepository extends AbstractJpaRepository<CommonMapp
         queryFactory.delete(commonMappingDoc)
                     .where(commonMappingDoc.refId.eq(boardId))
                     .execute();
+    }
+    
+    public void deleteMapFile(Long docNo, String empNo) {
+    	queryFactory.update(commonMappingDoc)
+        .set(commonMappingDoc.deleteYn, "Y")
+        .set(commonMappingDoc.updateUser, empNo)
+        .set(commonMappingDoc.updateDate, LocalDateTime.now())
+        .where(commonMappingDoc.docNo.eq(docNo))
+        .execute();
     }
 }
