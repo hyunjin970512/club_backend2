@@ -1,16 +1,19 @@
 package kr.co.koreazinc.temp.repository.main;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 
 import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.data.support.Query;
+import kr.co.koreazinc.temp.model.entity.account.QCoEmplBas;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
 import kr.co.koreazinc.temp.model.entity.main.QClubCreateRequest;
 import kr.co.koreazinc.temp.model.entity.main.QClubInfo;
@@ -44,6 +47,12 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
         // 동호회 가입 상태코드 co_common_code > CLUB_USER_STATUS_CD >20
         public SelectQuery<DTO> eqStatus(String status) {
             query.where(cui.status.eq(status));
+            return this;
+        }
+        
+        /** 동호회 ID 조건 */
+        public SelectQuery<DTO> eqClubId(Integer clubId) {
+            query.where(cui.clubId.eq(clubId.longValue()));
             return this;
         }
 
@@ -81,5 +90,53 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
                 .join(ci).on(ccr.clubId.eq(ci.clubId))
                 .join(cui).on(ci.clubId.eq(cui.clubId))
         ).joinedOnly(); // ✅ status='20' 기본 적용
+    }
+    
+    /**
+     * 동호회 멤버 목록 조회
+     */
+    public <T> List<T> selectClubMembers(Class<T> type, Integer clubId) {
+    	QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+    	QCoEmplBas ceb = QCoEmplBas.coEmplBas;
+    	
+    	return queryFactory
+    	        .select(Projections.bean(type,
+    	            cui.empNo.as("memberEmpNo"),
+    	            cui.joinDate.as("joinDate"),
+    	            ceb.deptCd.as("deptNm"),
+    	            ceb.nameKo.as("memberNm"),
+    	            ceb.positionCd.as("positionCd"),
+    	            Expressions.stringTemplate("fn_get_common_code({0}, {1})", 
+    	                    "COMPANY_CD", 
+    	                    ceb.coCd
+    	                ).as("companyNm")
+    	        ))
+    	        .from(cui)
+    	        .leftJoin(ceb).on(ceb.empNo.eq(cui.empNo))
+    	        .where(
+    	            cui.clubId.eq(clubId.longValue()),
+    	            cui.status.eq("10")
+    	        )
+    	        .orderBy(ceb.nameKo.asc())
+    	        .fetch();
+    }
+    
+    
+    /**
+     * 동호회 멤버 목록 제거
+     */
+    @Transactional
+    public long deleteClubMembers(Long clubId, List<String> memberEmpNos, String updateUser) {
+    	QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+    	
+    	return queryFactory.update(cui)
+                .set(cui.status, "20")
+                .set(cui.updateUser, updateUser)
+                .set(cui.updateDate, LocalDateTime.now())
+                .where(
+                    cui.clubId.eq(clubId),
+                    cui.empNo.in(memberEmpNos)
+                )
+                .execute();
     }
 }

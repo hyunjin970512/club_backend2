@@ -29,6 +29,7 @@ import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
 import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
+import kr.co.koreazinc.app.model.main.ClubMemberDto;
 import kr.co.koreazinc.app.service.detail.ClubDetailService;
 import kr.co.koreazinc.app.service.security.dto.UserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -267,5 +268,73 @@ public class ClubDetailController {
     @GetMapping("/{clubId}/request")
     public List<ClubJoinRequestDto> getRequests(@PathVariable("clubId") Integer clubId) {
         return clubDetailService.getClubRequestList(clubId);
+    }
+    
+    @Operation(summary = "가입요청 승인/거절")
+    @PostMapping("/{clubId}/joinRequest")
+    public ResponseEntity<?> approveClubJoin(
+            @PathVariable("clubId") Integer clubId, 
+            @RequestBody Map<String, Object> param, 
+            @ModelAttribute("loginEmpNo") String empNo) {
+    	Map<String, Object> result = new HashMap<>();
+    	
+    	param.put("clubId", clubId);
+    	param.put("updateUser", empNo);
+    	
+    	try {
+    		boolean isSuccess = clubDetailService.updateJoinRequest(param);
+    		
+    		result.put("success", isSuccess);
+    		if(isSuccess) {
+    			result.put("message", "처리가 완료되었습니다.");
+    		} else {
+    			result.put("message", "처리 대상이 없거나 실패했습니다.");
+    		}
+    		
+    		return ResponseEntity.ok(result);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of(
+                        "success", false, 
+                        "message", "서버 오류 발생: " + e.getMessage()
+                    ));
+    	}
+    }
+    
+    @Operation(summary = "동호회 명단 조회")
+    @GetMapping("/{clubId}/member")
+    public ResponseEntity<List<ClubMemberDto>> getClubMemberList(@PathVariable("clubId") Integer clubId) {
+    	List<ClubMemberDto> member = clubDetailService.getClubMemberList(clubId);
+    	
+    	if(member == null || member.isEmpty()) {
+    		return ResponseEntity.ok(List.of());
+    	}
+    	return ResponseEntity.ok(member);
+    }
+    
+    @Operation(summary = "동호회 명단 제거")
+    @PostMapping("/{clubId}/member/delete")
+    public ResponseEntity<Map<String, Object>> deleteMembers(
+            @PathVariable("clubId") Integer clubId, 
+            @RequestBody Map<String, Object> param, 
+            @ModelAttribute("loginEmpNo") String empNo) {
+    	Map<String, Object> result = new HashMap<>();
+    	
+    	param.put("clubId", clubId);
+        param.put("updateUser", empNo);
+        
+        try {
+            boolean isSuccess = clubDetailService.deleteMembers(param);
+            result.put("success", isSuccess);
+            result.put("message", isSuccess ? "삭제 처리가 완료되었습니다." : "삭제할 대상이 없습니다.");
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+        	e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "서버 오류: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
+        }
     }
 }

@@ -16,6 +16,7 @@ import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
 import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
+import kr.co.koreazinc.app.model.main.ClubMemberDto;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.spring.util.CommonMap;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
@@ -28,6 +29,7 @@ import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubCommentRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubDetailRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubJoinRequestRepository;
+import kr.co.koreazinc.temp.repository.main.ClubRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,6 +46,7 @@ public class ClubDetailService {
 	private final ClubJoinRequestRepository clubJoinRequestRepository;
 	private final CommonDocRepository commonDocRepository;
 	private final CommonMappingDocRepository commonMappingDocRepository;
+	private final ClubRepository clubRepository;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -302,14 +305,46 @@ public class ClubDetailService {
 	/**
 	 * 가입 승인/거절 처리
 	 */
-	/* @Transactional
+	@Transactional
 	 public boolean updateJoinRequest(Map<String, Object> param) {
 		Long clubId = Long.valueOf(param.get("clubId").toString());
 		String requestEmpNo = (String) param.get("requestEmpNo");
 		String status = (String) param.get("status");
 		String updateUser = (String) param.get("updateUser");
 		
-		//ClubJoinRequest request = clubJoinRequestRepository.findByClubIdAndRequestUser(clubId, requestEmpNo);
+		// 요청 상태 변경
+		long updateCnt = clubJoinRequestRepository.updateJoinRequestStatus(clubId, requestEmpNo, status, updateUser);
 		
-	} */
+		// 승인일 경우에만 멤버 추가
+		if(status.equals("20")) {
+			clubJoinRequestRepository.insertClubMember(clubId, requestEmpNo, updateUser);
+		}
+		return updateCnt > 0;
+	}
+	
+	/**
+     * 동호회 가입 명단 리스트 조회
+     */
+	@Transactional
+	public List<ClubMemberDto> getClubMemberList(Integer clubId) {
+		return clubRepository.selectClubMembers(ClubMemberDto.class, clubId);
+	}
+	
+	/**
+     * 동호회 가입 명단 리스트 제거
+     */
+	@SuppressWarnings("unchecked")
+	@Transactional
+	public boolean deleteMembers(Map<String, Object> param) {
+		Long clubId = Long.parseLong(String.valueOf(param.get("clubId")));
+	    String updateUser = (String) param.get("updateUser");
+	    
+	    List<String> memberEmpNos = (List<String>) param.get("memberEmpNos");
+	    if (memberEmpNos == null || memberEmpNos.isEmpty()) {
+	        return false;
+	    }
+	    
+	    long resultCnt = clubRepository.deleteClubMembers(clubId, memberEmpNos, updateUser);
+	    return resultCnt > 0;
+	}
 }

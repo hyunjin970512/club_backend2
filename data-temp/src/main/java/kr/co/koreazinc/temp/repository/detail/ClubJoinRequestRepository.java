@@ -1,5 +1,7 @@
 package kr.co.koreazinc.temp.repository.detail;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +15,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
+import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
 
 @Repository
 @Transactional(readOnly = true)
@@ -46,17 +49,33 @@ public class ClubJoinRequestRepository extends AbstractJpaRepository<ClubJoinReq
 	}
 	
 	/**
-     * 승인/거절 처리를 위해 단건 엔티티 조회
+     * 가입 요청 상태 업데이트 (승인/거절)
      */
-	public Optional<ClubJoinRequest> findByClubIdAndRequestUser(Long clubId, String requestUser) {
-        return Optional.ofNullable(
-            queryFactory
-                .selectFrom(clubJoinRequest)
+	public long updateJoinRequestStatus(Long clubId, String requestEmpNo, String status, String updateUser) {
+        return queryFactory.update(clubJoinRequest)
+        		.set(clubJoinRequest.status, status)
+        		.set(clubJoinRequest.updateUser, updateUser)
+        		.set(clubJoinRequest.updateDate, LocalDateTime.now())
                 .where(
                     clubJoinRequest.clubId.eq(clubId),
-                    clubJoinRequest.requestUser.eq(requestUser)
+                    clubJoinRequest.requestUser.eq(requestEmpNo)
                 )
-                .fetchOne()
-        );
+                .execute();
     }
+	
+	/**
+     * 승인 시 멤버 추가
+     */
+	@Transactional
+	public void insertClubMember(Long clubId, String empNo, String createUser) {
+		ClubUserInfo newUser = ClubUserInfo.builder()
+				.clubId(clubId)
+				.empNo(empNo)
+				.userRoleCd("MB")
+				.status("10")
+				.createUser(createUser)
+				.build();
+		
+		entityManager.persist(newUser);
+	}
 }
