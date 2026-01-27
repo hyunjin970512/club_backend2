@@ -54,7 +54,8 @@ public class WebSecurityConfig {
                 ).permitAll()
                 .requestMatchers(
                 		"/api/**",
-                		"/main/**"
+                		"/main/**",
+                		"/api/club/**"
                 		).access(accessChecker)
                 .anyRequest().permitAll()
             );

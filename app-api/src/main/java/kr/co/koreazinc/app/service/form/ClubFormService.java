@@ -1,11 +1,14 @@
 package kr.co.koreazinc.app.service.form;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import kr.co.koreazinc.app.model.form.ClubDto;
+import kr.co.koreazinc.app.service.account.CurrentUserService;
 import kr.co.koreazinc.temp.model.entity.main.ClubCreateRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubInfo;
 import kr.co.koreazinc.temp.repository.form.ClubCreateRequestRepository;
@@ -18,7 +21,9 @@ public class ClubFormService {
 
     private final ClubInfoRepository clubInfoRepository;
     private final ClubCreateRequestRepository clubCreateRequestRepository;
-
+    
+    private final CurrentUserService currentUser;
+    
     @Transactional(readOnly = true)
     public ClubDto.FormResponse getForm(String status, Long clubId, String empNo) {
         ClubDto.FormResponse res = new ClubDto.FormResponse();
@@ -84,7 +89,7 @@ public class ClubFormService {
         clubInfo.setUpdateUser(empNo);
         clubInfo.setUpdateDate(LocalDateTime.now());
         clubInfoRepository.save(clubInfo);
-
+        
         return clubInfo.getClubId();
     }
 
@@ -129,4 +134,5 @@ public class ClubFormService {
             clubInfoRepository.save(clubInfo);
         }
     }
+    
 }

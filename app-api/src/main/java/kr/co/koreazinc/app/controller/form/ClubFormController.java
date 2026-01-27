@@ -31,8 +31,13 @@ public class ClubFormController {
         return clubFormService.createClub(req, currentUser.empNoOrThrow());
     }
 
-//    @PutMapping("/{clubId}")
-//    public void update(@PathVariable Long clubId, @RequestBody ClubDto.SaveRequest req, Authentication authentication) {
-//    	clubFormService.updateClub(clubId, req, empNo(authentication));
-//    }
+    @PutMapping("/{clubId}")
+    public void update(
+            @PathVariable Long clubId,
+            @RequestBody ClubDto.SaveRequest req,
+            Authentication authentication
+    ) {
+        clubFormService.updateClub(clubId, req, currentUser.empNoOrThrow());
+    }
+
 }
