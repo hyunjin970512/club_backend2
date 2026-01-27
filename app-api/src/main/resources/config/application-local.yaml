@@ -39,6 +39,14 @@ spring:
         redirect:
           login-url: "{URL}/oauth/callback"
 
+# ✅ WebPush 설정: 공통 영역에 둬서 local/dev 어디서든 안 터지게
+webpush:
+  subject: "mailto:admin@club.local"
+  vapid:
+    public-key: "BMstnpMBC8koq-xMrO47VTNaFdzwxYsmwu1b58ThD4kxnuugYx00a2rhezTkXs7R9PqpCKoHUW2jWh19WxW5ap0"
+    private-key: "Z3Ha1XMBjU_I3n-rIuKcoeBzoZe65393xXbbdOQtVO4"
+
+# ✅ 기본값(공통) - local에서 사용
 app:
   frontend-base-url: http://localhost:3000
 
@@ -51,15 +59,6 @@ spring:
 app:
   frontend-base-url: http://localhost:3000
 
----
-spring:
-  config:
-    activate:
-      on-profile: dev
-
-app:
-  frontend-base-url: http://172.20.27.4:3000
-
 logging:
   level:
     root: info
@@ -67,8 +66,19 @@ logging:
     org.springframework.security: debug
     org.hibernate.SQL: debug
 
-webpush:
-  vapid:
-    publicKey: "BMstnpMBC8koq-xMrO47VTNaFdzwxYsmwu1b58ThD4kxnuugYx00a2rhezTkXs7R9PqpCKoHUW2jWh19WxW5ap0"
-    privateKey: "Z3Ha1XMBjU_I3n-rIuKcoeBzoZe65393xXbbdOQtVO4"
-    subject: "mailto:admin@club.local"
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+app:
+  #frontend-base-url: http://172.20.27.4:3000
+  frontend-base-url: http://localhost:3000
+
+logging:
+  level:
+    root: info
+    kr.co.koreazinc: debug
+    org.springframework.security: debug
+    org.hibernate.SQL: debug
