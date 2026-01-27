@@ -83,11 +83,11 @@ public class CommonDocService {
 	
 	// 파일 삭제
 	@Transactional
-	public boolean deleteFile(Long docNo, String jobSeCode, String empNo) {
+	public boolean deleteFile(Long refId, Long docNo, String jobSeCode, String empNo) {
 		// 1. CO_COMMON_DOC 업데이트
 		commonDocRepository.deleteFile(docNo, jobSeCode, empNo);
 		// 2. CO_COMMON_MAPPING_DOC 업데이트
-        commonMappingDocRepository.deleteMapFile(docNo, empNo);
+        commonMappingDocRepository.deleteMapFile(refId, docNo, empNo);
         return true;
 	}
 }

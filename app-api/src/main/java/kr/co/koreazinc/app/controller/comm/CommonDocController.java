@@ -124,13 +124,14 @@ public class CommonDocController {
      * 파일 삭제
      * @param docNo 문서 번호
      */
-    @PostMapping("/delete/{jobSeCode}/{docNo}")
+    @PostMapping("/delete/{jobSeCode}/{refId}/{docNo}")
     public ResponseEntity<?> deleteFile(
             @PathVariable("jobSeCode") String jobSeCode,
+            @PathVariable("refId") Long refId,
             @PathVariable("docNo") Long docNo,
             @ModelAttribute("loginEmpNo") String empNo) {
     	try {
-    		boolean isDeleted = commonDocService.deleteFile(docNo, jobSeCode, empNo);
+    		boolean isDeleted = commonDocService.deleteFile(refId, docNo, jobSeCode, empNo);
     		
     		if (isDeleted) {
     			return ResponseEntity.ok(Map.of("success", true, "message", "정상적으로 삭제되었습니다."));

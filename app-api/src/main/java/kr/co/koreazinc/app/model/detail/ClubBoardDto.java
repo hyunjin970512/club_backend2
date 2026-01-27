@@ -50,6 +50,9 @@ public class ClubBoardDto {
 	    
 	    @Schema(description = "첨부파일 목록")
 	    private List<FileDto> files;
+	    
+	    @Schema(description = "존재 첨부파일 목록")
+	    private List<Long> existFileId;
 	}
 	
 	@Getter

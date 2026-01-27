@@ -250,7 +250,7 @@ public class ClubDetailController {
     		@RequestPart(value = "files", required = false) List<MultipartFile> files,
     		@ModelAttribute("loginEmpNo") String empNo) {
     	try {
-    		clubDetailService.updatePost(dto, empNo);
+    		clubDetailService.updatePost(dto, files, empNo);
     		
     		return ResponseEntity.ok(Map.of(
     	            "success", true,

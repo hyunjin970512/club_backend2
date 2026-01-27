@@ -31,6 +31,7 @@ public class ClubDetailDto {
         private Long memberCnt;
         private Long requestCnt;
         private Integer ruleFileId;
+        private Integer requestId;
         
         private List<ClubBoardDto.Get> notices;
 	}

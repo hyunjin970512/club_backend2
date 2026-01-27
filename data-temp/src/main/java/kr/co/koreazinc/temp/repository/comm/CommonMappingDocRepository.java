@@ -59,12 +59,26 @@ public class CommonMappingDocRepository extends AbstractJpaRepository<CommonMapp
                     .execute();
     }
     
-    public void deleteMapFile(Long docNo, String empNo) {
+    public void deleteMapFile(Long refId, Long docNo, String empNo) {
     	queryFactory.update(commonMappingDoc)
         .set(commonMappingDoc.deleteYn, "Y")
         .set(commonMappingDoc.updateUser, empNo)
         .set(commonMappingDoc.updateDate, LocalDateTime.now())
-        .where(commonMappingDoc.docNo.eq(docNo))
+        .where(commonMappingDoc.docNo.eq(docNo), commonMappingDoc.refId.eq(refId))
         .execute();
+    }
+    
+    
+    /**
+     * 특정 게시글에 연결된 파일 매핑 목록 조회
+     */
+    public List<CommonMappingDoc> findByRefId(Long refId) {
+    	return queryFactory
+    			.selectFrom(commonMappingDoc)
+    			.where(
+    				commonMappingDoc.refId.eq(refId),
+    				commonMappingDoc.deleteYn.eq("N")
+    			)
+    			.fetch();
     }
 }

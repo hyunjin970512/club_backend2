@@ -37,4 +37,7 @@ public class VClubDetail {
 
     @Column(name = "rule_file_id")
     private Integer ruleFileId;
+    
+    @Column(name = "request_id")
+    private Integer requestId;
 }

@@ -1,5 +1,6 @@
 package kr.co.koreazinc.app.service.detail;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +17,13 @@ import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
 import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
+import kr.co.koreazinc.spring.util.CommonMap;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
+import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
+import kr.co.koreazinc.temp.repository.comm.CommonDocRepository;
+import kr.co.koreazinc.temp.repository.comm.CommonMappingDocRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubCommentRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubDetailRepository;
@@ -37,6 +42,8 @@ public class ClubDetailService {
 	private final ClubCommentRepository clubCommentRepository;
 	private final CommonDocService commonDocService;
 	private final ClubJoinRequestRepository clubJoinRequestRepository;
+	private final CommonDocRepository commonDocRepository;
+	private final CommonMappingDocRepository commonMappingDocRepository;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -185,13 +192,15 @@ public class ClubDetailService {
      * 동호회 게시글 수정
      */
 	@Transactional
-	public void updatePost(ClubBoardDto.Get dto, String empNo) {
+	public void updatePost(ClubBoardDto.Get dto, List<MultipartFile> files, String empNo) throws Exception {
 		ClubBoard post = clubBoardRepository.findOne(dto.getBoardId());
+		long boardId = Long.parseLong(String.valueOf(dto.getBoardId()));
+		String jobSeCode = "CB";
 		
 		if (!post.getCreateUser().equals(empNo)) {
 	        throw new SecurityException("본인이 작성한 글만 수정할 수 있습니다.");
 	    }
-		
+		// 게시글 정보 업데이트
 		post.update(
 				dto.getTitle(),
 		        dto.getContent(),
@@ -199,6 +208,29 @@ public class ClubDetailService {
 		        dto.getIsNotice(),
 		        empNo
 		);
+		
+		// 현재 맵핑된 파일 리스트 조회
+		List<CommonMappingDoc> currentMappings = commonMappingDocRepository.findByRefId(boardId);
+		
+		// 유지할 파일 ID 목록
+		List<Long> keepFileIds = dto.getExistFileId() != null ? dto.getExistFileId() : new ArrayList<>();
+		
+		// 삭제처리
+		for (CommonMappingDoc mapping : currentMappings) {
+			if (!keepFileIds.contains(mapping.getDocNo())) {
+				commonDocService.deleteFile(boardId, mapping.getDocNo(), jobSeCode, empNo);
+			}
+		}
+		
+		// 신규 추가
+		if (files != null && !files.isEmpty()) {
+			for (MultipartFile file : files) {
+				if (!file.isEmpty()) {
+					Long newDocNo = commonDocService.saveFile(file, jobSeCode, empNo);
+					commonDocService.saveMapping(boardId, newDocNo, empNo);
+				}
+			}
+		}
 	} 
 	
 	/**
