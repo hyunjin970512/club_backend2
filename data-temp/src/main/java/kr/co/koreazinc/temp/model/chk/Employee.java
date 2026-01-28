@@ -16,6 +16,9 @@ public class Employee {
 
   @Column(name = "name_ko")
   private String nameKo;
+  
+  @Column(name = "user_id")
+  private String userId;
 
   @Column(name = "co_cd")
   private String coCd;

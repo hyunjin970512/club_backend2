@@ -31,7 +31,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new UserPrincipal(
                 e.getEmpNo(),
                 empNo,
-                e.getNameKo(), List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                e.getNameKo(),
+                e.getUserId(),
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
     }
 }

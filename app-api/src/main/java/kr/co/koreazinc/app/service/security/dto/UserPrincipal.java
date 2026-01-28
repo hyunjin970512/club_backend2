@@ -10,19 +10,22 @@ public class UserPrincipal implements UserDetails {
 	private final String empNo;   // 사번
 	private final String accId;   // 계정아이디
 	private final String nameKo;   // 계정이름
+	private final String userId;   // 계정아이디
 	private final Collection<? extends GrantedAuthority> authorities;
 	
-	public UserPrincipal(String empNo, String accId,String nameKo,
+	public UserPrincipal(String empNo, String accId,String nameKo,String userId,
 	    Collection<? extends GrantedAuthority> authorities) {
 	  this.empNo = empNo;
 	  this.accId = accId;
 	  this.nameKo = nameKo;
+	  this.userId = userId;
 	  this.authorities = authorities;
 	}
 	
 	public String getEmpNo() { return empNo; }
 	public String getAccId() { return accId; }
 	public String getNameKo() { return nameKo; }
+	public String getUserId() { return userId; }
 	
 	@Override public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
 	@Override public String getPassword() { return ""; }

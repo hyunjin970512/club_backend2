@@ -39,4 +39,12 @@ public class CurrentUserService {
         }
         return p.getNameKo();
     }
+    
+    public String userIdOrThrow() {
+        UserPrincipal p = current();
+        if (p == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+        return p.getUserId();
+    }
 }
