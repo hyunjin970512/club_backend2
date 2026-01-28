@@ -1,6 +1,7 @@
 package kr.co.koreazinc.temp.model.entity.main;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,4 +33,16 @@ public class ClubApplyFeeRuleBas {
 
     @Column(name = "use_yn", length = 1)
     private String useYn;
+
+    @Column(name = "create_user", length = 20)
+    private String createUser;
+
+    @Column(name = "create_date")
+    private LocalDateTime createDate;
+
+    @Column(name = "update_user", length = 20)
+    private String updateUser;
+
+    @Column(name = "update_date")
+    private LocalDateTime updateDate;
 }

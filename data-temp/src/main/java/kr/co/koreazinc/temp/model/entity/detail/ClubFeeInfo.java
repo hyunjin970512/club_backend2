@@ -2,8 +2,11 @@ package kr.co.koreazinc.temp.model.entity.detail;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,10 +17,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "club_fee_info")
+@Table(
+	    name = "club_fee_info",
+	    schema = "public",
+	    uniqueConstraints = @UniqueConstraint(name = "uk_club_fee", columnNames = {"club_id", "position_cd"})
+	)
 @Entity
 public class ClubFeeInfo {
+	
 	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // ✅ 이게 핵심
     @Column(name = "fee_id")
     private Integer feeId;
 	
