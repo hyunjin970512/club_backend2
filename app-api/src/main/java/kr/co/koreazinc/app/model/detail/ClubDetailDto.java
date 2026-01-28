@@ -32,6 +32,13 @@ public class ClubDetailDto {
         private Long requestCnt;
         private Integer ruleFileId;
         private Integer requestId;
+        private String companyNm;
+        private String positionCd;
+        private String requestNm;
+        private String purpose;
+        private String deptCd;
+        private String docFileNm;
+        private String downloadUrl;
         
         private List<ClubBoardDto.Get> notices;
 	}

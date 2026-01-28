@@ -56,7 +56,14 @@ public class ClubDetailRepository extends AbstractJpaRepository<ClubDetail, Inte
                         vClubDetail.memberCnt,
                         vClubDetail.requestCnt,
                         vClubDetail.ruleFileId,
-                        vClubDetail.requestId
+                        vClubDetail.requestId,
+                        vClubDetail.positionCd,
+                        vClubDetail.companyNm,
+                        vClubDetail.purpose,
+                        vClubDetail.deptCd,
+                        vClubDetail.requestNm,
+                        vClubDetail.docFileNm,
+                        vClubDetail.downloadUrl
                 ))
                 .from(vClubDetail));
     }

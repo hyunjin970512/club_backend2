@@ -1,5 +1,6 @@
 package kr.co.koreazinc.app.service.detail;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
+import kr.co.koreazinc.app.model.detail.ClubGwRequest;
 import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
 import kr.co.koreazinc.app.model.main.ClubMemberDto;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
@@ -24,6 +26,7 @@ import kr.co.koreazinc.spring.util.CommonMap;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
+import kr.co.koreazinc.temp.model.entity.main.ClubCreateRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
 import kr.co.koreazinc.temp.repository.comm.CommonDocRepository;
@@ -32,6 +35,7 @@ import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubCommentRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubDetailRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubJoinRequestRepository;
+import kr.co.koreazinc.temp.repository.form.ClubCreateRequestRepository;
 import kr.co.koreazinc.temp.repository.main.ClubRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +54,7 @@ public class ClubDetailService {
 	private final CommonDocRepository commonDocRepository;
 	private final CommonMappingDocRepository commonMappingDocRepository;
 	private final ClubRepository clubRepository;
+	private final ClubCreateRequestRepository clubCreateRequestRepository;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -182,12 +187,6 @@ public class ClubDetailService {
 			}
 			
 			post.deletePost(dto.getUserEmpNo());
-			
-			/* if(dto.getBoardDocNo() != null) {
-				Map<String, Object> param = new HashMap<>();
-	            param.put("boardDocNo", dto.getBoardDocNo());
-	            param.put("updateUser", dto.getUserEmpNo());
-			} */
 			return true;
 		} catch (Exception e) {
 			log.error("게시글 저장 중 서버 에러 발생: {}", e.getMessage());
@@ -370,5 +369,70 @@ public class ClubDetailService {
 	        // 회원이 아닌 경우 (GUEST 권한 부여 및 가입 신청 상태 포함)
 	        return new ClubAuthDto("GUEST", "00", empNo, joinStatus);
 	    });
+	}
+	
+	/**
+     * 동호회 정보 수정 (목적, 파일)
+     */
+	@Transactional
+	public void updateClubRequestInfo(ClubGwRequest dto, String empNo) {
+		ClubCreateRequest request = clubCreateRequestRepository.findById(dto.getRequestId())
+	            .orElseThrow(() -> new IllegalArgumentException("신청 내역을 찾을 수 없습니다."));
+		
+		
+		request.setPurpose(dto.getPurpose());
+	    request.setRuleFileId(dto.getRuleFileId());
+	    request.setMemberFileId(dto.getMemberFileId());
+	    request.setUpdateUser(empNo);
+	    request.setUpdateDate(LocalDateTime.now());
+	    
+	    clubCreateRequestRepository.save(request);
+	}
+	
+	/**
+     * 동호회 신설 GW 상신 데이터
+     */
+	public String createXmlData(ClubGwRequest dto, String serverBaseUrl) {
+		String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+
+	    StringBuilder xml = new StringBuilder();
+	    xml.append("<Document>");
+	    xml.append("<Title>동호회 등록 신청서(").append(dto.getClubName()).append(")</Title>");
+	    xml.append("<Items>");
+	    xml.append("<Item>");
+	    xml.append("<ClubName>").append(dto.getClubName()).append("</ClubName>");
+	    xml.append("<ClubId>").append(dto.getClubId()).append("</ClubId>");
+	    xml.append("<RequestId>").append(dto.getRequestId()).append("</RequestId>");
+	    xml.append("<CreateDate>").append(today).append("</CreateDate>");
+	    xml.append("<MemberCnt>").append(dto.getMemberCnt()).append("명</MemberCnt>");
+	    xml.append("<MemberDept>");
+	    xml.append("대표자소속 : ").append(dto.getDeptCd()).append("팀 / ");
+	    xml.append("직위 : ").append(dto.getPositionCd()).append(" / ");
+	    xml.append("성명 : ").append(dto.getRequestNm());
+	    xml.append("</MemberDept>");
+	    xml.append("</Item>");
+	    xml.append("</Items>");
+	    xml.append("<Purpose>").append(dto.getPurpose()).append("</Purpose>");
+	    xml.append("<RequestDate>").append(today).append("</RequestDate>");
+	    xml.append("<RequestNm>").append(dto.getClubName()).append("회 회장 ").append(dto.getRequestNm()).append("</RequestNm>");
+	    // ■ 파일 리스트 처리
+	    xml.append("<Files>");
+	    // 1. 동호회 회칙
+	    xml.append("<File>");
+        xml.append("<FileName>1. 동호회 회칙 1부</FileName>");
+        xml.append("<FileLink>").append(serverBaseUrl).append("/api/common/doc/download/FR/").append(dto.getRuleFileId()).append("</FileLink>");
+        xml.append("</File>");
+	    // 2. 회원 명부
+        xml.append("<File>");
+        xml.append("<FileName>2. 회원명부 1부</FileName>");
+        xml.append("<FileLink>").append(serverBaseUrl).append("/api/common/doc/download/MB/").append(dto.getMemberFileId()).append("</FileLink>");
+        xml.append("</File>");
+	    xml.append("</Files>");
+	    
+	    xml.append("<RequestClub>").append(dto.getClubName()).append("</RequestClub>");
+	    xml.append("<RequestNm>").append(dto.getRequestNm()).append("</RequestNm>");
+	    xml.append("</Document>");
+
+	    return xml.toString();
 	}
 }

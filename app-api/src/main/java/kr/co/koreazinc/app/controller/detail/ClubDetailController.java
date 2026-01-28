@@ -1,5 +1,6 @@
 package kr.co.koreazinc.app.controller.detail;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,23 +25,31 @@ import com.github.loki4j.client.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
+import kr.co.koreazinc.app.authentication.TokenAuthenticationProvider;
 import kr.co.koreazinc.app.model.detail.ClubAuthDto;
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
 import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
+import kr.co.koreazinc.app.model.detail.ClubGwRequest;
 import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
 import kr.co.koreazinc.app.model.main.ClubMemberDto;
+import kr.co.koreazinc.app.service.account.CurrentUserService;
+import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.app.service.detail.ClubDetailService;
 import kr.co.koreazinc.app.service.security.dto.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping(value = "/api/clubs")
 public class ClubDetailController {
 
     private final ClubDetailService clubDetailService;
+    private final CommonDocService commonDocService;
+    private final CurrentUserService currentUserService;
     
     @Operation(summary = "로그인 사번")
     @ModelAttribute("loginEmpNo")
@@ -346,5 +355,49 @@ public class ClubDetailController {
             @ModelAttribute("loginEmpNo") String empNo) {
     	ClubAuthDto authDto = clubDetailService.getClubAuthInfo(clubId, empNo);
     	return ResponseEntity.ok(authDto);
+    }
+    
+    @Operation(summary = "동호회 GW 상신")
+    @PostMapping("/draft")
+    public ResponseEntity<?> gwDraft(ClubGwRequest requestDto, @ModelAttribute("loginEmpNo") String empNo, HttpServletRequest request) throws IOException {
+    	String serverBaseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+    	
+    	// 동호회 회칙 업데이트
+    	if (requestDto.getRuleFile() != null && !requestDto.getRuleFile().isEmpty()) {
+    		if (requestDto.getRuleFileId() != null) {
+    			try {
+    				commonDocService.deleteFile(requestDto.getRequestId(), requestDto.getRuleFileId(), "FR", empNo);
+    			} catch (Exception e) {
+                    log.error("기존 회칙 파일 삭제 실패 (ID: {}): {}", requestDto.getRuleFileId(), e.getMessage());
+                }
+    		}
+    		// 새 파일 저장 후 새로운 ID 획득
+    		Long newRuleFileId = commonDocService.saveFile(requestDto.getRuleFile(), "FR", empNo);
+    		commonDocService.saveMapping(requestDto.getRequestId(), newRuleFileId, empNo);
+            requestDto.setRuleFileId(newRuleFileId);
+    	}
+    	
+    	// 회원 명부 처리
+    	if (requestDto.getMemberFile() != null && !requestDto.getMemberFile().isEmpty()) {
+    		Long newMemberFileId = commonDocService.saveFile(requestDto.getMemberFile(), "MB", empNo);
+    		commonDocService.saveMapping(requestDto.getRequestId(), newMemberFileId, empNo);
+            requestDto.setMemberFileId(newMemberFileId);
+    	}
+    	
+    	// 동호회 정보 업데이트
+    	clubDetailService.updateClubRequestInfo(requestDto, empNo);
+    	
+    	// GW 상신
+    	String xmlData = clubDetailService.createXmlData(requestDto, serverBaseUrl);
+    	
+    	Map<String, String> result = new HashMap<>();
+    	result.put("actionUrl", "http://gwdev.koreazinc.co.kr/ekp/service/openapi/IF_EAP_001_goWrite");
+        result.put("USER_ID", currentUserService.userIdOrThrow());
+        result.put("CMP_ID", "C300200116");
+        result.put("WORK_ID", "AW89321137883776007659");
+        System.out.println("xmlData > " + xmlData);
+        result.put("XMLDATA", xmlData);
+        
+        return ResponseEntity.ok(result);
     }
 }

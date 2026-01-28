@@ -40,4 +40,25 @@ public class VClubDetail {
     
     @Column(name = "request_id")
     private Integer requestId;
+    
+    @Column(name = "position_cd")
+    private String positionCd;
+    
+    @Column(name = "company_nm")
+    private String companyNm;
+    
+    @Column(name = "purpose")
+    private String purpose;
+    
+    @Column(name = "request_nm")
+    private String requestNm;
+    
+    @Column(name = "dept_cd")
+    private String deptCd;
+    
+    @Column(name = "doc_file_nm")
+    private String docFileNm;
+    
+    @Column(name = "download_url")
+    private String downloadUrl;
 }
