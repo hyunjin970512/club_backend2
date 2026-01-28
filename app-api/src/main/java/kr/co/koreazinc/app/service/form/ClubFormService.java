@@ -201,7 +201,7 @@ public class ClubFormService {
         }
 
         if (ruleFile != null && !ruleFile.isEmpty()) {
-            Long docNo = commonDocService.saveFile(ruleFile, "CB", empNo);
+            Long docNo = commonDocService.saveFile(ruleFile, "FR", empNo);
             commonDocService.saveMapping(req.getRequestId(), docNo, empNo);
             req.setRuleFileId(docNo);
         }
