@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import kr.co.koreazinc.app.model.detail.ClubAuthDto;
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
@@ -23,6 +25,7 @@ import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
+import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
 import kr.co.koreazinc.temp.repository.comm.CommonDocRepository;
 import kr.co.koreazinc.temp.repository.comm.CommonMappingDocRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
@@ -84,6 +87,7 @@ public class ClubDetailService {
 	        map.put("commentCnt", post.getCommentCnt());
 	        map.put("recommendCnt", post.getRecomendCnt());
 	        map.put("viewCnt", post.getViewCnt());
+	        map.put("authorEmpNo", post.getCreateUser());
 	        
 	        // 첨부파일 조회
 			List<ClubBoardDto.FileDto> files = clubBoardRepository.selectPostFiles(ClubBoardDto.FileDto.class, post.getBoardId().longValue());
@@ -346,5 +350,25 @@ public class ClubDetailService {
 	    
 	    long resultCnt = clubRepository.deleteClubMembers(clubId, memberEmpNos, updateUser);
 	    return resultCnt > 0;
+	}
+	
+	/**
+     * 동호회 권한 정보 조회
+     */
+	@Transactional
+	public ClubAuthDto getClubAuthInfo(Long clubId, String empNo) {
+		// 회원 정보 조회
+		Optional<ClubUserInfo> userInfo = clubDetailRepository.getClubAuthInfo(clubId, empNo);
+		
+		// 가입 신청 상태 조회
+		String joinStatus = clubDetailRepository.getJoinRequestStatus(clubId, empNo).orElse(null);
+		
+		return userInfo.map(info -> {
+	        // 회원인 경우
+	        return new ClubAuthDto(info.getUserRoleCd(), info.getStatus(), info.getEmpNo(), joinStatus);
+	    }).orElseGet(() -> {
+	        // 회원이 아닌 경우 (GUEST 권한 부여 및 가입 신청 상태 포함)
+	        return new ClubAuthDto("GUEST", "00", empNo, joinStatus);
+	    });
 	}
 }

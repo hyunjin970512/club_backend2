@@ -40,6 +40,7 @@ public class ClubCommentRepository extends AbstractJpaRepository<ClubComment, Lo
                         coEmplBas.nameKo.as("authorNm"),
                         coEmplBas.positionCd.as("authorPosition"),
                         clubComment.createDate.as("createDate"),
+                        clubComment.createUser.as("createUser"),
                         clubComment.deleteYn.as("deleteYn")
                 ))
                 .from(clubComment)

@@ -63,6 +63,7 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
                         coEmplBas.nameKo.as("authorNm"),
                         coEmplBas.positionCd.as("authorPosition"),
                         clubBoard.createDate.as("createDate"),
+                        clubBoard.createUser.as("createUser"),
                         clubBoard.viewCnt,
                         clubBoard.recomendCnt,
                         clubComment.commentId.count().intValue().as("commentCnt")

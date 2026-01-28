@@ -59,13 +59,13 @@ public class ClubBoard{
     private String createUser;
     
     @Column(name = "create_date")
-    private java.time.LocalDateTime createDate;
+    private LocalDateTime createDate;
     
     @Column(name = "update_user")
     private String updateUser;
 
     @Column(name = "update_date")
-    private java.time.LocalDateTime updateDate;
+    private LocalDateTime updateDate;
     
     @Column(name = "view_cnt")
     private int viewCnt;

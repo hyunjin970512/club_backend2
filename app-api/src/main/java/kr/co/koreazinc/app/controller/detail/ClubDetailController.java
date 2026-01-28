@@ -24,6 +24,7 @@ import com.github.loki4j.client.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
+import kr.co.koreazinc.app.model.detail.ClubAuthDto;
 import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.detail.ClubDetailDto;
@@ -336,5 +337,14 @@ public class ClubDetailController {
             result.put("message", "서버 오류: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
         }
+    }
+    
+    @Operation(summary = "동호회 권한 정보 조회")
+    @GetMapping("/{clubId}/auth")
+    public ResponseEntity<ClubAuthDto> getClubAuth(
+            @PathVariable("clubId") Long clubId,
+            @ModelAttribute("loginEmpNo") String empNo) {
+    	ClubAuthDto authDto = clubDetailService.getClubAuthInfo(clubId, empNo);
+    	return ResponseEntity.ok(authDto);
     }
 }

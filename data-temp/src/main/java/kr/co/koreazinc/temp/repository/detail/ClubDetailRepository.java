@@ -1,11 +1,11 @@
 package kr.co.koreazinc.temp.repository.detail;
-import static kr.co.koreazinc.temp.model.entity.detail.QClubBoard.clubBoard;
-import static kr.co.koreazinc.temp.model.entity.account.QCoEmplBas.coEmplBas;
-import static kr.co.koreazinc.temp.model.entity.detail.QClubComment.clubComment;
+import static kr.co.koreazinc.temp.model.entity.main.QClubUserInfo.clubUserInfo;
+import static kr.co.koreazinc.temp.model.entity.main.QClubJoinRequest.clubJoinRequest;
 import static kr.co.koreazinc.temp.model.entity.detail.view.QVClubDetail.vClubDetail;
 import static kr.co.koreazinc.temp.model.entity.detail.QClubFeeInfo.clubFeeInfo;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +16,8 @@ import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.data.support.Query;
 import kr.co.koreazinc.temp.model.entity.detail.ClubDetail;
+import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
+import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 
 @Repository
 @Transactional(readOnly = true)
@@ -92,5 +94,33 @@ public class ClubDetailRepository extends AbstractJpaRepository<ClubDetail, Inte
                .where(clubFeeInfo.clubId.eq((int) clubId.longValue())
                        .and(clubFeeInfo.positionCd.eq(positionCd)))
                .execute();
+  }
+  
+  /**
+   * 동호회 권한 정보 조회하기
+   */
+  public Optional<ClubUserInfo> getClubAuthInfo(Long clubId, String empNo) {
+	 return Optional.ofNullable(
+			 queryFactory
+			 	.selectFrom(clubUserInfo)
+			 	.where(
+			 		clubUserInfo.clubId.eq(clubId),
+			 		clubUserInfo.empNo.eq(empNo)
+			 	)
+			 	.fetchOne()
+		);
+  }
+  
+  public Optional<String> getJoinRequestStatus(Long clubId, String empNo) {
+	  return Optional.ofNullable(
+		        queryFactory
+		            .select(clubJoinRequest.status)
+		            .from(clubJoinRequest)
+		            .where(
+		                clubJoinRequest.clubId.eq(clubId),
+		                clubJoinRequest.requestUser.eq(empNo)
+		            )
+		            .fetchOne()
+		    );
   }
 }
