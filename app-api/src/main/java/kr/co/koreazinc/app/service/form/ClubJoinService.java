@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import kr.co.koreazinc.app.authentication.TokenAuthenticationProvider;
 import kr.co.koreazinc.app.model.form.ClubJoinRequestDto;
 import kr.co.koreazinc.app.model.push.PushType;
+import kr.co.koreazinc.app.service.account.CurrentUserService;
 import kr.co.koreazinc.app.service.push.PushFacade;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
 import kr.co.koreazinc.temp.repository.form.ClubInfoRepository;
@@ -32,6 +33,8 @@ public class ClubJoinService {
     
     private final ClubInfoRepository clubInfoRepository; // clubId -> 마스터
     private final PushFacade pushFacade;
+    
+    private final CurrentUserService currentUser;
     
     @Transactional(readOnly = true)
     public ClubJoinRequestDto.JoinCheckResponse checkJoinState(String empNo, Long clubId) {
@@ -127,7 +130,8 @@ public class ClubJoinService {
 							"clubId", clubId,
 							"requestId", requestId,
 							"clubNm", club.getClubNm(),          // ✅ 필드명 맞춰
-							"requesterEmpNo", empNo
+							"requesterEmpNo", empNo,
+							"applicantNm", currentUser.nameKoreanOrThrow()
 						);
 						
 						log.info("[JOIN-PUSH] sending type={}, target={}, data={}",

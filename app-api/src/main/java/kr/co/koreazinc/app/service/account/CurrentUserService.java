@@ -31,4 +31,12 @@ public class CurrentUserService {
         }
         return p.getEmpNo();
     }
+    
+    public String nameKoreanOrThrow() {
+        UserPrincipal p = current();
+        if (p == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+        return p.getNameKo();
+    }
 }
