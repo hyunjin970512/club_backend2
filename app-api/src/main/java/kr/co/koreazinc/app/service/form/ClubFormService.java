@@ -2,8 +2,6 @@ package kr.co.koreazinc.app.service.form;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +14,8 @@ import kr.co.koreazinc.temp.model.entity.main.ClubCreateRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubInfo;
 import kr.co.koreazinc.temp.repository.form.ClubCreateRequestRepository;
 import kr.co.koreazinc.temp.repository.form.ClubInfoRepository;
+import kr.co.koreazinc.temp.repository.form.ClubFeeInfoRepository;
+import kr.co.koreazinc.temp.repository.form.ClubUserInfoRepository;   // ✅ 추가
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,11 +24,13 @@ public class ClubFormService {
 
     private final ClubInfoRepository clubInfoRepository;
     private final ClubCreateRequestRepository clubCreateRequestRepository;
-    
+
+    private final ClubFeeInfoRepository clubFeeInfoRepository; // ✅ 회비
+    private final ClubUserInfoRepository clubUserInfoRepository; // ✅ 생성자 자동 가입
+
     private final CurrentUserService currentUser;
-    
-    private final CommonDocService commonDocService; 
-    
+    private final CommonDocService commonDocService;
+
     @Transactional(readOnly = true)
     public ClubDto.FormResponse getForm(String status, Long clubId, String empNo) {
         ClubDto.FormResponse res = new ClubDto.FormResponse();
@@ -39,7 +41,6 @@ public class ClubFormService {
             return res;
         }
 
-        // EDIT
         ClubInfo clubInfo = clubInfoRepository.findById(clubId)
             .orElseThrow(() -> new IllegalArgumentException("club_info not found: " + clubId));
 
@@ -64,6 +65,7 @@ public class ClubFormService {
     // 동호회 신설
     @Transactional
     public Long createClub(ClubDto.SaveRequest dto, MultipartFile ruleFile, String empNo) throws IOException {
+
         // 1) club_info 생성
         ClubInfo clubInfo = new ClubInfo();
         clubInfo.setClubNm(dto.getClubNm());
@@ -74,6 +76,15 @@ public class ClubFormService {
         clubInfo.setCreateDate(LocalDateTime.now());
 
         clubInfo = clubInfoRepository.save(clubInfo);
+
+        // ✅ (추가) 기본 회비 3건 자동 생성
+        // club_fee_info 쪽 clubId 타입이 Integer라서 변환 (현재 구조 유지)
+        Integer clubIdInt = clubInfo.getClubId().intValue();
+        clubFeeInfoRepository.insertDefaultFees(clubIdInt, "SYSTEM");
+
+        // ✅ (추가) 동호회 생성자 자동 가입(클럽유저 테이블 insert)
+        // user_role_cd='00', status='20', emp_no=empNo, create_user=empNo
+        clubUserInfoRepository.insertCreatorAsMember(clubInfo.getClubId(), empNo);
 
         // 2) club_create_request 생성
         ClubCreateRequest req = new ClubCreateRequest();
@@ -89,17 +100,16 @@ public class ClubFormService {
         req.setCreateDate(LocalDateTime.now());
 
         req = clubCreateRequestRepository.save(req);
-        
+
         // 3) 파일 있으면 업로드 + mapping(refId=requestId) + request.ruleFileId 반영
         if (ruleFile != null && !ruleFile.isEmpty()) {
             Long docNo = commonDocService.saveFile(ruleFile, "FR", empNo);
-            commonDocService.saveMapping(req.getRequestId(), docNo, empNo); // ✅ refId = requestId
+            commonDocService.saveMapping(req.getRequestId(), docNo, empNo);
             req.setRuleFileId(docNo);
             req.setUpdateUser(empNo);
             req.setUpdateDate(LocalDateTime.now());
             clubCreateRequestRepository.save(req);
         } else {
-            // 파일 없이도 dto로 ruleFileId 들어온 경우가 있을 수 있으니 반영(옵션)
             if (dto.getRuleFileId() != null) {
                 req.setRuleFileId(dto.getRuleFileId());
                 req.setUpdateUser(empNo);
@@ -112,7 +122,7 @@ public class ClubFormService {
         clubInfo.setUpdateUser(empNo);
         clubInfo.setUpdateDate(LocalDateTime.now());
         clubInfoRepository.save(clubInfo);
-        
+
         return clubInfo.getClubId();
     }
 
@@ -121,7 +131,6 @@ public class ClubFormService {
         ClubInfo clubInfo = clubInfoRepository.findById(clubId)
             .orElseThrow(() -> new IllegalArgumentException("club_info not found: " + clubId));
 
-        // club_info 업데이트 (필요한 것만)
         clubInfo.setClubNm(dto.getClubNm());
         clubInfo.setClubType(dto.getClubType());
         clubInfo.setUpdateUser(empNo);
@@ -129,7 +138,6 @@ public class ClubFormService {
 
         clubInfoRepository.save(clubInfo);
 
-        // create_request는 "최신 1건" 업데이트 (없으면 새로 생성)
         ClubCreateRequest req = clubCreateRequestRepository.findTopByClubIdOrderByRequestIdDesc(clubId)
             .orElseGet(() -> {
                 ClubCreateRequest r = new ClubCreateRequest();
@@ -151,17 +159,12 @@ public class ClubFormService {
 
         clubCreateRequestRepository.save(req);
 
-        // club_info.create_request_id 동기화 (옵션)
         if (clubInfo.getCreateRequestId() == null || clubInfo.getCreateRequestId().isBlank()) {
             clubInfo.setCreateRequestId(String.valueOf(req.getRequestId()));
             clubInfoRepository.save(clubInfo);
         }
     }
-    
-    /**
-     * ✅ 수정: club_info 업데이트 + 최신 request 업데이트
-     * ruleFile 있으면 업로드 + mapping(refId=requestId) + ruleFileId 교체
-     */
+
     @Transactional
     public void updateClubWithFile(Long clubId, ClubDto.SaveRequest dto, MultipartFile ruleFile, String empNo) throws IOException {
         LocalDateTime now = LocalDateTime.now();
@@ -169,14 +172,12 @@ public class ClubFormService {
         ClubInfo clubInfo = clubInfoRepository.findById(clubId)
             .orElseThrow(() -> new IllegalArgumentException("club_info not found: " + clubId));
 
-        // 1) club_info 업데이트
         clubInfo.setClubNm(dto.getClubNm());
         clubInfo.setClubType(dto.getClubType());
         clubInfo.setUpdateUser(empNo);
         clubInfo.setUpdateDate(now);
         clubInfoRepository.save(clubInfo);
 
-        // 2) 최신 request 가져오거나 없으면 생성
         ClubCreateRequest req = clubCreateRequestRepository.findTopByClubIdOrderByRequestIdDesc(clubId)
             .orElseGet(() -> {
                 ClubCreateRequest r = new ClubCreateRequest();
@@ -188,7 +189,6 @@ public class ClubFormService {
                 return r;
             });
 
-        // 3) 텍스트 업데이트
         req.setClubNm(dto.getClubNm());
         req.setClubDesc(dto.getClubDesc());
         req.setPurpose(dto.getPurpose());
@@ -196,24 +196,18 @@ public class ClubFormService {
         req.setUpdateUser(empNo);
         req.setUpdateDate(now);
 
-        // 4) request가 신규인 경우 먼저 저장해서 requestId 확보
         if (req.getRequestId() == null) {
             req = clubCreateRequestRepository.save(req);
         }
 
-        // 5) 파일 있으면 업로드 + mapping(refId=requestId) + ruleFileId 교체
         if (ruleFile != null && !ruleFile.isEmpty()) {
             Long docNo = commonDocService.saveFile(ruleFile, "CB", empNo);
             commonDocService.saveMapping(req.getRequestId(), docNo, empNo);
             req.setRuleFileId(docNo);
-        } else {
-            // 파일 안 왔으면 기존 유지 (dto.ruleFileId로 덮어쓰지 않음)
-            // 단, dto.ruleFileId를 일부러 보내는 구조라면 여기서 반영하도록 변경 가능
         }
 
         clubCreateRequestRepository.save(req);
 
-        // 6) club_info.create_request_id 동기화(없으면 채움)
         if (clubInfo.getCreateRequestId() == null || clubInfo.getCreateRequestId().isBlank()) {
             clubInfo.setCreateRequestId(String.valueOf(req.getRequestId()));
             clubInfo.setUpdateUser(empNo);
@@ -221,5 +215,4 @@ public class ClubFormService {
             clubInfoRepository.save(clubInfo);
         }
     }
-    
 }
