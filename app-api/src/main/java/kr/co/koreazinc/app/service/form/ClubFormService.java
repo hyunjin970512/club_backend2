@@ -1,6 +1,7 @@
 package kr.co.koreazinc.app.service.form;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
@@ -73,6 +74,7 @@ public class ClubFormService {
         clubInfo.setClubType(dto.getClubType());
         clubInfo.setStatus("10");
         clubInfo.setCreateUser(empNo);
+        clubInfo.setEstablishDt(LocalDate.now());
         clubInfo.setCreateDate(LocalDateTime.now());
 
         clubInfo = clubInfoRepository.save(clubInfo);
