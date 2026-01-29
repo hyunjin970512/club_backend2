@@ -109,13 +109,13 @@ public class SubsidyManageRepository
             .from(ci)
             .leftJoin(cui).on(
                 ci.clubId.eq(cui.clubId)
-                    .and(cui.status.eq("20"))
+                    .and(cui.status.eq("10"))
             )
             .leftJoin(ceb).on(
                 ceb.empNo.eq(ci.clubMasterId)
                     .and(ceb.deleteAt.ne("Y"))
             )
-            .where(ci.status.notIn("40", "50"))
+            .where(ci.status.eq("30"))
             .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
             .orderBy(ci.clubNm.asc())
     );
@@ -206,12 +206,12 @@ public class SubsidyManageRepository
 	          ))
 	          .from(ci)
 	          .leftJoin(cui).on(
-	              ci.clubId.eq(cui.clubId).and(cui.status.eq("20"))
+	              ci.clubId.eq(cui.clubId).and(cui.status.eq("10"))
 	          )
 	          .leftJoin(ceb).on(
 	              ceb.empNo.eq(ci.clubMasterId).and(ceb.deleteAt.ne("Y"))
 	          )
-	          .where(ci.status.notIn("40", "50"))
+	          .where(ci.status.eq("30"))
 	          .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
 	          .orderBy(ci.clubNm.asc())
 	  );

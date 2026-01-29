@@ -117,7 +117,8 @@ public class FeeDeductionManageRepository
             )
             .where(
                 cui.status.eq("10"),
-                ci.status.in("20", "30"),
+                //ci.status.in("20", "30"),
+                ci.status.in("30"),
                 // ✅ yyyymm 기준 가입일(create_date) 필터
                 //cui.createDate.goe(startExpr),
                 cui.createDate.lt(endExpr)
