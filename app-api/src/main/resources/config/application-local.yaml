@@ -48,7 +48,9 @@ webpush:
 
 # ✅ 기본값(공통) - local에서 사용
 app:
-  frontend-base-url: http://localhost:3000
+  #frontend-base-url: http://localhost:3000
+  #frontend-base-url: http://172.20.27.116:3000
+  frontend-base-url: http:///172.20.27.4:3000
 
 ---
 spring:
@@ -57,7 +59,8 @@ spring:
       on-profile: local
 
 app:
-  frontend-base-url: http://localhost:3000
+  #frontend-base-url: http://172.20.27.116:3000
+  frontend-base-url: http://172.20.27.4:3000
 
 logging:
   level:
@@ -73,8 +76,9 @@ spring:
       on-profile: dev
 
 app:
-  #frontend-base-url: http://172.20.27.4:3000
-  frontend-base-url: http://localhost:3000
+  frontend-base-url: http://172.20.27.4:3000
+  #frontend-base-url: http://localhost:3000
+  #frontend-base-url: http://172.20.27.116:3000
 
 logging:
   level:
