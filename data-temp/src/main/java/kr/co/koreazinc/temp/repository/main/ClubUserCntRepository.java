@@ -17,7 +17,7 @@ import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 @Transactional(readOnly = true)
 public class ClubUserCntRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
 
-    private static final String ACTIVE_STATUS = "ACTIVE";
+    private static final String ACTIVE_STATUS = "10";
 
     public ClubUserCntRepository(List<EntityManager> entityManagers) {
         super(ClubUserInfo.class, entityManagers);

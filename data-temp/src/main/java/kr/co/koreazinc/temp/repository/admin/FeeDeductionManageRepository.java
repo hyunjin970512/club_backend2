@@ -116,7 +116,7 @@ public class FeeDeductionManageRepository
                     .and(cfi.positionCd.eq(positionSubCode)) // ✅ String = String 서브쿼리
             )
             .where(
-                cui.status.eq("20"),
+                cui.status.eq("10"),
                 ci.status.in("20", "30"),
                 // ✅ yyyymm 기준 가입일(create_date) 필터
                 //cui.createDate.goe(startExpr),

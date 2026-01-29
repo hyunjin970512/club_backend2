@@ -45,7 +45,7 @@ public class ClubUserInfoRepository extends AbstractJpaRepository<ClubUserInfo, 
     /**
      * ✅ 동호회 신설 시 생성자 자동 가입/등록
      * - user_role_cd: '00' (동호회 관리자 권한)
-     * - status: '20' (가입/승인)
+     * - status: '10' (가입/승인)
      * - join_date/create_date/update_date: 엔티티 Builder에서 now로 세팅됨
      * - create_user/update_user: empNo
      */
@@ -58,7 +58,7 @@ public class ClubUserInfoRepository extends AbstractJpaRepository<ClubUserInfo, 
             .clubId(clubId)
             .empNo(empNo)
             .userRoleCd("00")
-            .status("20")
+            .status("10")
             .createUser(empNo)
             .build();
 

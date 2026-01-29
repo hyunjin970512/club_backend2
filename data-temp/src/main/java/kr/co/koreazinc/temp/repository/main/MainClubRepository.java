@@ -25,7 +25,7 @@ public class MainClubRepository extends AbstractJpaRepository<ClubInfo, Long> {
     private static final String MAIN_CODE_CLUB_TYPE = "CLUB_TYPE";
     
     // 동호회 가입 상태 코드
-    private static final String JOINED_STATUS = "20";
+    private static final String JOINED_STATUS = "10";
     
     // 동호회 상태코드
     private static final String STATUS_10 = "10";	//사전요청
@@ -75,7 +75,7 @@ public class MainClubRepository extends AbstractJpaRepository<ClubInfo, Long> {
     /**
      * 동호회 목록 조회
      * - club_type명(code_nm)
-     * - 가입자수(status='20') join_cnt
+     * - 가입자수 (status='10') join_cnt
      */
     public <T> SelectQuery<T> selectClubList(Class<T> type) {
 

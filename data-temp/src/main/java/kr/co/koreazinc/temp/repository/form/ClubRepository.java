@@ -47,7 +47,7 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
             .where(
                 cui.empNo.eq(empNo),
                 cui.clubId.eq(clubId),
-                cui.status.eq("20") // 가입
+                cui.status.eq("10") // 가입
             )
             .fetchFirst();
         return one != null;

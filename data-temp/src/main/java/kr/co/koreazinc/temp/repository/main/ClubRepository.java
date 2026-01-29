@@ -23,7 +23,7 @@ import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 @Transactional(readOnly = true)
 public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
 
-    private static final String JOINED_STATUS = "20"; // ✅ 가입 상태코드
+    private static final String JOINED_STATUS = "10"; // ✅ 가입 상태코드
 
     public ClubRepository(List<EntityManager> entityManagers) {
         super(ClubUserInfo.class, entityManagers);
@@ -44,7 +44,7 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
             return this;
         }
 
-        // 동호회 가입 상태코드 co_common_code > CLUB_USER_STATUS_CD >20
+        // 동호회 가입 상태코드 co_common_code > CLUB_USER_STATUS_CD > 10
         public SelectQuery<DTO> eqStatus(String status) {
             query.where(cui.status.eq(status));
             return this;
@@ -70,7 +70,7 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
     /**
      * 가입한 동호회 조회
      * - WHERE cui.emp_no = ?
-     * - AND   cui.status = '20'
+     * - AND   cui.status = '10'
      */
     public <T> SelectQuery<T> selectJoinedClubs(Class<T> type) {
 
