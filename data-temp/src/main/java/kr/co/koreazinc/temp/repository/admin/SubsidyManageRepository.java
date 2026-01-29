@@ -1,13 +1,13 @@
 package kr.co.koreazinc.temp.repository.admin;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.DateTemplate;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -139,81 +139,95 @@ public class SubsidyManageRepository
   }
 
   /**
-   * ✅ 계산 모드(Manage 없을 때) : 클럽별 회원수 + "오늘 기준" 적용중 규정(pay_amount)까지 같이 뽑기
+   * ✅ 계산 모드(Manage 없을 때) : 클럽별 회원수 + "연도 기준" 적용중 규정(pay_amount)까지 같이 뽑기
+   *
+   * ✅ 추가 반영:
+   * - 동호회 생성일이 (year+1)-01-01 00:00:00 이후면 해당 year 산출에서 제외
    *
    * 리턴 컬럼 순서(생성자 DTO 맞춰라):
    * clubId, clubNm, clubLeader, memberCnt, supportAmount, payYn
    */
   public <T> SelectQuery<T> selectCalcRowsWithSupportAmount(Class<T> type, String year) {
 
-	  QClubInfo ci = QClubInfo.clubInfo;
-	  QClubUserInfo cui = QClubUserInfo.clubUserInfo;
-	  QCoEmplBas ceb = QCoEmplBas.coEmplBas;
+    QClubInfo ci = QClubInfo.clubInfo;
+    QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+    QCoEmplBas ceb = QCoEmplBas.coEmplBas;
 
-	  QClubApplyFeeRuleBas bas = QClubApplyFeeRuleBas.clubApplyFeeRuleBas;
-	  QClubApplyFeeRuleDetail det = QClubApplyFeeRuleDetail.clubApplyFeeRuleDetail;
+    QClubApplyFeeRuleBas bas = QClubApplyFeeRuleBas.clubApplyFeeRuleBas;
+    QClubApplyFeeRuleDetail det = QClubApplyFeeRuleDetail.clubApplyFeeRuleDetail;
 
-	  var leaderExpr = Expressions.stringTemplate(
-	      "coalesce({0} || ' ' || {1}, '미상')",
-	      ceb.nameKo, ceb.positionCd
-	  );
+    var leaderExpr = Expressions.stringTemplate(
+        "coalesce({0} || ' ' || {1}, '미상')",
+        ceb.nameKo, ceb.positionCd
+    );
 
-	  var memberCntLong = cui.clubUserId.count();
-	  var memberCntInt = memberCntLong.intValue();
+    var memberCntLong = cui.clubUserId.count();
+    var memberCntInt = memberCntLong.intValue();
 
-	  // ✅ year 기준일(예: 2025-12-31) - 그 해의 마지막 날로 잡는게 보통 안전함
-	  LocalDate base = LocalDate.of(Integer.parseInt(year.trim()), 12, 31);
-	  var baseDate = Expressions.dateTemplate(LocalDate.class, "{0}", base);
+    int y = Integer.parseInt(year.trim());
 
-	  // ✅ 그 기준일에 “적용중”인 applyId
-	  var currentApplyId =
-	      JPAExpressions
-	          .select(bas.applyId)
-	          .from(bas)
-	          .where(
-	              bas.useYn.eq("Y"),
-	              bas.applyStartDt.loe(baseDate),
-	              bas.applyEndDt.isNull().or(bas.applyEndDt.goe(baseDate))
-	          )
-	          .orderBy(bas.applyId.desc())
-	          .limit(1);
+    // ✅ year 기준일(예: 2025-12-31) - 규정 적용 판단용
+    LocalDate base = LocalDate.of(y, 12, 31);
+    var baseDate = Expressions.dateTemplate(LocalDate.class, "{0}", base);
 
-	  // ✅ 회원수 구간 매칭 payAmount
-	  var payAmountSub =
-	      JPAExpressions
-	          .select(det.payAmount)
-	          .from(det)
-	          .where(
-	              det.applyId.eq(currentApplyId),
-	              memberCntLong.goe(det.memberCntFrom.longValue()),
-	              det.memberCntTo.isNull().or(memberCntLong.loe(det.memberCntTo.longValue()))
-	          )
-	          .limit(1);
+    // ✅ 동호회 생성일 컷: (year+1)-01-01 00:00:00 이전에 생성된 동호회만 포함
+    LocalDateTime nextYearStart = LocalDateTime.of(y + 1, 1, 1, 0, 0, 0);
+    var nextYearStartExpr = Expressions.dateTimeTemplate(LocalDateTime.class, "{0}", nextYearStart);
 
-	  var supportAmountExpr =
-	      Expressions.numberTemplate(Integer.class, "coalesce({0}, 0)", payAmountSub);
+    // ✅ 그 기준일에 “적용중”인 applyId
+    var currentApplyId =
+        JPAExpressions
+            .select(bas.applyId)
+            .from(bas)
+            .where(
+                bas.useYn.eq("Y"),
+                bas.applyStartDt.loe(baseDate),
+                bas.applyEndDt.isNull().or(bas.applyEndDt.goe(baseDate))
+            )
+            .orderBy(bas.applyId.desc())
+            .limit(1);
 
-	  return new SelectQuery<>(
-	      queryFactory
-	          .select(Projections.constructor(
-	              type,
-	              ci.clubId,
-	              ci.clubNm,
-	              leaderExpr,
-	              memberCntInt,
-	              supportAmountExpr,
-	              Expressions.constant("N")
-	          ))
-	          .from(ci)
-	          .leftJoin(cui).on(
-	              ci.clubId.eq(cui.clubId).and(cui.status.eq("10"))
-	          )
-	          .leftJoin(ceb).on(
-	              ceb.empNo.eq(ci.clubMasterId).and(ceb.deleteAt.ne("Y"))
-	          )
-	          .where(ci.status.eq("30"))
-	          .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
-	          .orderBy(ci.clubNm.asc())
-	  );
-	}
+    // ✅ 회원수 구간 매칭 payAmount
+    var payAmountSub =
+        JPAExpressions
+            .select(det.payAmount)
+            .from(det)
+            .where(
+                det.applyId.eq(currentApplyId),
+                memberCntLong.goe(det.memberCntFrom.longValue()),
+                det.memberCntTo.isNull().or(memberCntLong.loe(det.memberCntTo.longValue()))
+            )
+            .limit(1);
+
+    var supportAmountExpr =
+        Expressions.numberTemplate(Integer.class, "coalesce({0}, 0)", payAmountSub);
+
+    return new SelectQuery<>(
+        queryFactory
+            .select(Projections.constructor(
+                type,
+                ci.clubId,
+                ci.clubNm,
+                leaderExpr,
+                memberCntInt,
+                supportAmountExpr,
+                Expressions.constant("N")
+            ))
+            .from(ci)
+            .leftJoin(cui).on(
+                ci.clubId.eq(cui.clubId).and(cui.status.eq("10"))
+            )
+            .leftJoin(ceb).on(
+                ceb.empNo.eq(ci.clubMasterId).and(ceb.deleteAt.ne("Y"))
+            )
+            .where(
+                ci.status.eq("30"),
+
+                // ✅ 추가된 조건: 동호회 생성일 기준으로 year 산출 제외
+                ci.createDate.lt(nextYearStartExpr)
+            )
+            .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
+            .orderBy(ci.clubNm.asc())
+    );
+  }
 }
