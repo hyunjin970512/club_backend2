@@ -394,6 +394,12 @@ public class ClubDetailService {
      */
 	public String createXmlData(ClubGwRequest dto, String serverBaseUrl) {
 		String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd"));
+	    String formattedPurpose = "";
+	    
+	    if (dto.getPurpose() != null) {
+	    	// \n 또는 \r\n을 모두 <br>로 치환
+	        formattedPurpose = dto.getPurpose().replace("\n", "<br>").replace("\r", "");
+	    }
 
 	    StringBuilder xml = new StringBuilder();
 	    xml.append("<Document>");
@@ -412,9 +418,7 @@ public class ClubDetailService {
 	    xml.append("</MemberDept>");
 	    xml.append("</Item>");
 	    xml.append("</Items>");
-	    xml.append("<Purpose>").append(dto.getPurpose()).append("</Purpose>");
-	    xml.append("<RequestDate>").append(today).append("</RequestDate>");
-	    xml.append("<RequestNm>").append(dto.getClubName()).append("회 회장 ").append(dto.getRequestNm()).append("</RequestNm>");
+	    xml.append("<Purpose><![CDATA[").append(formattedPurpose).append("]]></Purpose>");
 	    // ■ 파일 리스트 처리
 	    xml.append("<Files>");
 	    // 1. 동호회 회칙
@@ -433,6 +437,6 @@ public class ClubDetailService {
 	    xml.append("<RequestNm>").append(dto.getRequestNm()).append("</RequestNm>");
 	    xml.append("</Document>");
 
-	    return xml.toString();
+	    return xml.toString().replaceAll("&", "&amp;").replaceAll("%", "&#37;");
 	}
 }
