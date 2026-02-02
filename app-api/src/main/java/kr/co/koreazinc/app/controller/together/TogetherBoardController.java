@@ -4,7 +4,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -38,14 +41,10 @@ public class TogetherBoardController {
 			postDto.setCreateUser(principal.getEmpNo());
 			postDto.setUpdateUser(principal.getEmpNo());
 		}
-		log.info("수신 데이터: {}", postDto.toString());
 		
 		try {
-			Long boardId = togetherBoardService.saveBoard(postDto);
+			Long boardId = togetherBoardService.insertTogetherPost(postDto, files);
 			
-			if (files != null && !files.isEmpty()) {
-				// 첨부파일 로직 설정
-			}
 			result.put("success", true);
 			result.put("boardId", boardId);
 		    result.put("message", "등록되었습니다.");
