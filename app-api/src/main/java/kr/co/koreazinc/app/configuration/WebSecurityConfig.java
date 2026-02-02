@@ -49,6 +49,7 @@ public class WebSecurityConfig {
                     "/api-docs/**",
                     "/api/auth/login",
                     "/api/clubs/**",
+                    "/api/together/**",
                     "/oauth/callback",
                     "/api/common/doc/download/**",
                     "/api/club/join/check/**",
