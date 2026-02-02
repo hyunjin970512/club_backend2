@@ -27,7 +27,7 @@ public class TogetherBoard {
 	private Long boardId;
 
 	@Column(name = "club_code")
-    private String cludCode;
+    private String clubCode;
 	
 	@Column(name = "together_code")
     private String togetherCode;
