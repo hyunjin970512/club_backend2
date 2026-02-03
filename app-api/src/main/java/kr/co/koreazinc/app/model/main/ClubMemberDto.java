@@ -17,4 +17,5 @@ public class ClubMemberDto {
     private String memberNm;
     private String positionCd;
     private String companyNm;
+    private String empNo;
 }

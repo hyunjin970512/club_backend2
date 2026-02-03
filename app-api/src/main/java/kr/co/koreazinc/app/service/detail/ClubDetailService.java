@@ -21,7 +21,10 @@ import kr.co.koreazinc.app.model.detail.ClubFeeInfoDto;
 import kr.co.koreazinc.app.model.detail.ClubGwRequest;
 import kr.co.koreazinc.app.model.main.ClubJoinRequestDto;
 import kr.co.koreazinc.app.model.main.ClubMemberDto;
+import kr.co.koreazinc.app.model.push.PushType;
+import kr.co.koreazinc.app.service.account.CurrentUserService;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
+import kr.co.koreazinc.app.service.push.PushFacade;
 import kr.co.koreazinc.spring.util.CommonMap;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
@@ -55,6 +58,11 @@ public class ClubDetailService {
 	private final CommonMappingDocRepository commonMappingDocRepository;
 	private final ClubRepository clubRepository;
 	private final ClubCreateRequestRepository clubCreateRequestRepository;
+
+	//push
+	private final PushFacade pushFacade;
+	
+	private final CurrentUserService currentUser;
 	
 	/**
      * 동호회 상세 정보 조회
@@ -165,6 +173,36 @@ public class ClubDetailService {
 					}
 				}
 			}
+			
+			if(boardId != 0) {
+				
+				String clubName = this.getClubDetail(dto.getClubId()).getClubName();
+				
+				List<ClubMemberDto> sendList = new ArrayList<ClubMemberDto>();
+				
+				sendList = this.getClubMemberList(dto.getClubId());
+				
+				for(int i = 0; i < sendList.size(); i++) {
+					
+					String sendEmpno = sendList.get(i).getEmpNo();
+					
+					Map<String, Object> data = Map.of(
+							"clubNm", clubName,
+							"authorNm", currentUser.nameKoreanOrThrow(),
+							"postTitle", dto.getTitle(),
+							"clubId", dto.getClubId(),
+							"postId", boardId
+						);
+					
+					pushFacade.send(
+							PushType.POST_CREATED,
+							List.of(sendEmpno),
+							data,
+							empNo // createdByEmpNo
+						);
+				}
+			}
+			
 			return true;
 		} catch (Exception e) {
 			log.error("게시글 저장 중 서버 에러 발생: {}", e.getMessage());

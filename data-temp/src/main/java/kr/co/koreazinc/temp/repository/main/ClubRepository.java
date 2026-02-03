@@ -106,6 +106,7 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
     	            ceb.deptCd.as("deptNm"),
     	            ceb.nameKo.as("memberNm"),
     	            ceb.positionCd.as("positionCd"),
+    	            ceb.empNo,
     	            Expressions.stringTemplate("fn_get_common_code({0}, {1})", 
     	                    "COMPANY_CD", 
     	                    ceb.coCd
