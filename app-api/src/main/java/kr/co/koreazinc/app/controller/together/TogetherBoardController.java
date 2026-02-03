@@ -7,8 +7,10 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.github.loki4j.client.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
+import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.together.TogetherBoardDto;
 import kr.co.koreazinc.app.model.together.TogetherCommentDto;
 import kr.co.koreazinc.app.service.security.dto.UserPrincipal;
@@ -128,4 +131,50 @@ public class TogetherBoardController {
     	List<TogetherCommentDto> list = togetherBoardService.getCommentList(boardId);
     	return ResponseEntity.ok(list);
     }
+	
+	@Operation(summary = "투게더 댓글 저장")
+	@PostMapping("/posts/{boardId}/comment/save")
+	public ResponseEntity<?> addComment(@PathVariable("boardId") Long boardId, @RequestBody TogetherCommentDto dto, @AuthenticationPrincipal UserPrincipal principal) {
+		dto.setBoardId(boardId);
+		
+		if (principal != null) {
+			dto.setCreateUser(principal.getEmpNo());
+			dto.setUpdateUser(principal.getEmpNo());
+		}
+		
+		togetherBoardService.saveComment(dto);
+		return ResponseEntity.ok().body(Map.of("success", true));
+	}
+	
+	@Operation(summary = "투게더 댓글 수정")
+    @PostMapping("/posts/{boardId}/comment/{commentId}/update")
+    public ResponseEntity<?> updateComment(
+    		@PathVariable("boardId") Long boardId, 
+    		@PathVariable("commentId") Long commentId,
+    		@RequestBody TogetherCommentDto dto,
+    		@AuthenticationPrincipal UserPrincipal principal) {
+		dto.setCommentId(commentId);
+		dto.setBoardId(boardId);
+		dto.setUpdateUser(principal.getEmpNo());
+		
+		togetherBoardService.updateComment(boardId, dto);
+		
+		return ResponseEntity.ok(Map.of("success", true));
+	}
+	
+	@Operation(summary = "동호회 댓글 삭제")
+    @PostMapping("/posts/{boardId}/comment/{commentId}/delete")
+    public ResponseEntity<?> deleteComment(
+    		@PathVariable("boardId") Long boardId, 
+    		@PathVariable("commentId") Long commentId,
+    		@AuthenticationPrincipal UserPrincipal principal) {
+		
+		TogetherCommentDto dto = new TogetherCommentDto();
+		dto.setCommentId(commentId);
+		dto.setUpdateUser(principal.getEmpNo());
+		
+		togetherBoardService.deleteComment(boardId, dto);
+		
+		return ResponseEntity.ok(Map.of("success", true)); 
+	}
 }

@@ -6,18 +6,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import com.querydsl.core.types.Projections;
-import com.querydsl.jpa.JPAExpressions;
 
 import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
-import kr.co.koreazinc.temp.model.entity.together.QTogetherComment;
 import kr.co.koreazinc.temp.model.entity.together.TogetherBoard;
 
 import static kr.co.koreazinc.temp.model.entity.account.QCoEmplBas.coEmplBas;
 import static kr.co.koreazinc.temp.model.entity.comm.QCommonDoc.commonDoc;
 import static kr.co.koreazinc.temp.model.entity.comm.QCommonMappingDoc.commonMappingDoc;
 import static kr.co.koreazinc.temp.model.entity.together.QTogetherBoard.togetherBoard;
-import static kr.co.koreazinc.temp.model.entity.together.QTogetherComment.togetherComment;
 
 @Repository
 public class TogetherBoardRepository extends AbstractJpaRepository<TogetherBoard, Long> {
@@ -119,44 +116,4 @@ public class TogetherBoardRepository extends AbstractJpaRepository<TogetherBoard
 	  
 	   return lastCnt != null ? lastCnt : 0;
    }
-   
-   /**
-	* 댓글 조회
-	*/
-   public <T> List<T> selectCommentList(Class<T> type, Long boardId) {
-	   QTogetherComment subComment = new QTogetherComment("subComment");
-	   
-	   return queryFactory
-               .select(Projections.bean(type,
-            		   togetherComment.commentId.as("commentId"),
-            		   togetherComment.boardId.boardId.as("boardId"),
-            		   togetherComment.parentCommentId.as("parentCommentId"),
-            		   togetherComment.content.as("content"),
-            		   togetherComment.recomendCnt.as("recommendCnt"),
-                       coEmplBas.nameKo.as("authorNm"),
-                       coEmplBas.positionCd.as("authorPosition"),
-                       togetherComment.createDate.as("createDate"),
-                       togetherComment.createUser.as("createUser"),
-                       togetherComment.deleteYn.as("deleteYn")
-               ))
-               .from(togetherComment)
-               .leftJoin(coEmplBas).on(togetherComment.createUser.eq(coEmplBas.empNo))
-               .where(togetherComment.boardId.boardId.eq(boardId)
-                       .and(
-                    		togetherComment.deleteYn.eq("N")
-                   		.or(
-                   			// 삭제되었는데 자식이 존재하는 경우
-                   			togetherComment.deleteYn.eq("Y")
-                   			.and(
-                   				JPAExpressions
-                   					.select(subComment.count())
-                   					.from(subComment)
-                   					.where(subComment.parentCommentId.eq(togetherComment.commentId))
-                   					.gt(0L)
-                   			)
-                   		)))
-               .orderBy(togetherComment.createDate.asc())
-               .fetch();
-   }
-   
 }

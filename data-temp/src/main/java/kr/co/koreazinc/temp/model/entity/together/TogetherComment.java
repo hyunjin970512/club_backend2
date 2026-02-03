@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -56,4 +57,25 @@ public class TogetherComment {
 
     @Column(name = "update_date")
     private LocalDateTime updateDate;
+    
+
+    /**
+     * 댓글 수정
+     */
+    @Transactional
+    public void updateComment(String content, String userEmpNo) {
+    	this.content = content;
+    	this.updateUser = userEmpNo;
+    	this.updateDate = LocalDateTime.now();
+    }
+    
+
+    /**
+     * 댓글 삭제
+     */
+    public void deleteComment(String userEmpNo) {
+    	this.deleteYn = "Y";
+    	this.updateUser = userEmpNo;
+    	this.updateDate = LocalDateTime.now();
+    }
 }

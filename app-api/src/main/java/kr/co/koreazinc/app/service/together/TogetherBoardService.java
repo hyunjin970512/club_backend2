@@ -14,6 +14,7 @@ import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.temp.model.entity.together.TogetherBoard;
 import kr.co.koreazinc.temp.model.entity.together.TogetherComment;
 import kr.co.koreazinc.temp.repository.together.TogetherBoardRepository;
+import kr.co.koreazinc.temp.repository.together.TogetherCommentRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class TogetherBoardService {
 	
 	private final TogetherBoardRepository togetherBoardRepository;
+	private final TogetherCommentRepository togetherCommentRepository;
 	private final CommonDocService commonDocService;
 	
 	/**
@@ -104,7 +106,49 @@ public class TogetherBoardService {
      * 투게더 댓글 조회
      */
 	public List<TogetherCommentDto> getCommentList(Long boardId) {
-		return togetherBoardRepository.selectCommentList(TogetherCommentDto.class, boardId);
+		return togetherCommentRepository.selectCommentList(TogetherCommentDto.class, boardId);
 	}
 	
+	/**
+     * 투게더 댓글 작성
+     */
+	@Transactional
+	public void saveComment(TogetherCommentDto dto) {
+		// 게시글 객체 조회
+		TogetherBoard board = togetherBoardRepository.findOne(dto.getBoardId());
+		
+		if (board == null) {
+			throw new RuntimeException("해당 게시글을 찾을 수 없습니다. ID: " + dto.getBoardId());
+		}
+		
+		TogetherComment entity = TogetherComment.builder()
+				.boardId(board)
+				.parentCommentId(dto.getParentCommentId())
+				.content(dto.getContent())
+				.recomendCnt(0)
+				.deleteYn("N")
+				.createUser(dto.getCreateUser())
+				.createDate(LocalDateTime.now())
+				.updateUser(dto.getUpdateUser())
+				.updateDate(LocalDateTime.now())
+				.build();
+		
+		togetherCommentRepository.save(entity);
+	}
+	
+	/**
+     * 투게더 댓글 수정
+     */
+	@Transactional
+	public void updateComment(Long boardId, TogetherCommentDto dto) {
+		togetherCommentRepository.updateComment(boardId, dto.getCommentId(), dto.getContent(), dto.getUpdateUser());
+	}
+	
+	/**
+     * 투게더 댓글 삭제
+     */
+	@Transactional
+	public void deleteComment(Long boardId, TogetherCommentDto dto) {
+		togetherCommentRepository.deleteComment(boardId, dto.getCommentId(), dto.getUpdateUser());
+	}
 }
