@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.github.loki4j.client.http.HttpStatus;
+
 import io.swagger.v3.oas.annotations.Operation;
 import kr.co.koreazinc.app.model.together.TogetherBoardDto;
+import kr.co.koreazinc.app.model.together.TogetherCommentDto;
 import kr.co.koreazinc.app.service.security.dto.UserPrincipal;
 import kr.co.koreazinc.app.service.together.TogetherBoardService;
 import lombok.RequiredArgsConstructor;
@@ -55,5 +58,74 @@ public class TogetherBoardController {
 		}
 		return result;
 	}
-    
+	
+	@Operation(summary = "투게더 게시글 조회수 증가")
+    @PostMapping("/posts/{boardId}/view")
+	 public ResponseEntity<Map<String, Object>> viewPost(@PathVariable("boardId") Long boardId) {
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			int viewCnt = togetherBoardService.updateViewCount(boardId);
+			
+			result.put("success", true);
+            result.put("lastCnt", viewCnt);
+            
+            return ResponseEntity.ok(result);
+		} catch (Exception e) {
+    		result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
+    	}
+	}
+	
+	@Operation(summary = "동호회 게시글 추천")
+    @PostMapping("/posts/{boardId}/recommend")
+	public ResponseEntity<Map<String, Object>> recommendPost(@PathVariable("boardId") Long boardId) {
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			int lastCnt = togetherBoardService.updateRecommendPost(boardId);
+			
+			result.put("success", true);
+            result.put("lastCnt", lastCnt);
+            result.put("message", "추천이 완료되었습니다.");
+            
+            return ResponseEntity.ok(result);
+		} catch (Exception e) {
+    		result.put("success", false);
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(result);
+    	}
+	}
+	
+	@Operation(summary = "투게더 게시글 상세 조회")
+    @GetMapping("/posts/{boardId}")
+	public Map<String, Object> getTogetherPostDetail(@PathVariable("boardId") Long boardId) {
+		Map<String, Object> result = new HashMap<>();
+		
+		try {
+			TogetherBoardDto data = togetherBoardService.getTogetherPostDetail(boardId);
+			
+			if (data != null) {
+				result.put("success", true);
+				result.put("data", data);
+			} else {
+				result.put("success", false);
+	            result.put("message", "게시글을 찾을 수 없습니다.");
+			}
+		} catch (Exception e) {
+			log.error("조회 중 오류 발생: ", e);
+	        result.put("success", false);
+	        result.put("message", "데이터를 가져오는 중 오류가 발생했습니다.");
+		}
+		
+		return result;
+	}
+	
+	@Operation(summary = "투게더 댓글 조회")
+    @GetMapping("/posts/{boardId}/comments")
+    public ResponseEntity<List<TogetherCommentDto>> getComments(@PathVariable("boardId") Long boardId) {
+    	List<TogetherCommentDto> list = togetherBoardService.getCommentList(boardId);
+    	return ResponseEntity.ok(list);
+    }
 }

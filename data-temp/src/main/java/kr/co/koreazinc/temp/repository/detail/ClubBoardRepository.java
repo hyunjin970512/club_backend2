@@ -187,7 +187,8 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
 	            .where(
 	                    commonMappingDoc.refId.eq(boardId), 
 	                    commonMappingDoc.deleteYn.eq("N"),
-	                    commonDoc.deleteYn.eq("N")
+	                    commonDoc.deleteYn.eq("N"),
+	                    commonDoc.jobSeCode.eq("CB")
 	            )
 	            .fetch();
    }

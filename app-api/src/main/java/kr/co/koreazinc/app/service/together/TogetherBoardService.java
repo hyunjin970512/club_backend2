@@ -9,8 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import kr.co.koreazinc.app.model.together.TogetherBoardDto;
+import kr.co.koreazinc.app.model.together.TogetherCommentDto;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
 import kr.co.koreazinc.temp.model.entity.together.TogetherBoard;
+import kr.co.koreazinc.temp.model.entity.together.TogetherComment;
 import kr.co.koreazinc.temp.repository.together.TogetherBoardRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +23,9 @@ public class TogetherBoardService {
 	private final TogetherBoardRepository togetherBoardRepository;
 	private final CommonDocService commonDocService;
 	
+	/**
+     * 투게더 게시글 작성
+     */
 	@Transactional
 	public Long insertTogetherPost(TogetherBoardDto dto, List<MultipartFile> files) throws IOException {
 		// Entity 변환 및 저장
@@ -57,4 +62,49 @@ public class TogetherBoardService {
 		}
 		return boardId;
 	}
+	
+	/**
+     * 투게더 게시물 추천하기
+     */
+	@Transactional
+	public int updateRecommendPost(Long boardId) {
+		return togetherBoardRepository.updateRecommendPost(boardId);
+	}
+	
+	/**
+    * 투게더 게시글 조회수 증가
+    */
+	@Transactional
+	public int updateViewCount(Long boardId) {
+		return togetherBoardRepository.updateViewCount(boardId);
+	}
+	
+	/**
+     * 투게더 게시글 상세 조회
+     */
+	@Transactional
+	public TogetherBoardDto getTogetherPostDetail(Long boardId) {
+		TogetherBoardDto detail = togetherBoardRepository.selectTogetherPostDetail(TogetherBoardDto.class, boardId);
+		
+		if (detail != null) {
+			List<TogetherBoardDto.FileDto> files = togetherBoardRepository.selectPostFiles(TogetherBoardDto.FileDto.class, boardId);
+			files.forEach(file -> {
+				// 이미지를 보여줄 경로 (mode = view)
+				file.setDisplayUrl("/api/common/doc/download/TO/" + file.getDocNo() + "?mode=view");
+				// 파일을 다운로드할 경로 (기본값 download)
+		        file.setDownloadUrl("/api/common/doc/download/TO/" + file.getDocNo());
+			});
+			detail.setFiles(files);
+		}
+		
+		return detail;
+	}
+	
+	/**
+     * 투게더 댓글 조회
+     */
+	public List<TogetherCommentDto> getCommentList(Long boardId) {
+		return togetherBoardRepository.selectCommentList(TogetherCommentDto.class, boardId);
+	}
+	
 }

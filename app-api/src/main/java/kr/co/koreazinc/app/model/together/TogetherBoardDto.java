@@ -3,6 +3,12 @@ package kr.co.koreazinc.app.model.together;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import kr.co.koreazinc.app.model.detail.ClubBoardDto;
+import kr.co.koreazinc.app.model.detail.ClubBoardDto.FileDto;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,5 +44,42 @@ public class TogetherBoardDto {
     
     private LocalDateTime updateDate;
     
-    private List<Long> existFileId;   // 수정 시 유지할 기존 파일 ID 목록
+    private String authorNm;
+    
+    private String authorPosition;
+    
+    @Schema(description = "첨부파일 목록")
+    private List<FileDto> files;
+    
+    @Schema(description = "존재 첨부파일 목록")
+    private List<Long> existFileId;
+    
+    /**
+     * 첨부파일 정보를 담기 위한 DTO
+     */
+	@Getter
+    @Setter
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PUBLIC)
+    @Schema(description = "첨부파일 상세 정보")
+	public static class FileDto {
+		@Schema(description = "문서 번호")
+        private Long docNo;
+        
+        @Schema(description = "원본 파일명")
+        private String docFileNm;
+        
+        @Schema(description = "이미지 미리보기/보기 URL")
+        private String displayUrl;
+        
+        @Schema(description = "파일 다운로드 URL")
+        private String downloadUrl;
+        
+        @Schema(description = "파일 확장자")
+        private String fileExt;
+        
+        @Schema(description = "파일 크기")
+        private Long fileSize;
+	}
 }
