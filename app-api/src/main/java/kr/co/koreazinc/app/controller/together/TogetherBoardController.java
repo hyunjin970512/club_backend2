@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.github.loki4j.client.http.HttpStatus;
 
 import io.swagger.v3.oas.annotations.Operation;
+import kr.co.koreazinc.app.model.detail.ClubBoardDto;
 import kr.co.koreazinc.app.model.detail.ClubCommentDto;
 import kr.co.koreazinc.app.model.together.TogetherBoardDto;
 import kr.co.koreazinc.app.model.together.TogetherCommentDto;
@@ -60,6 +61,46 @@ public class TogetherBoardController {
             result.put("message", "등록 중 오류가 발생했습니다: " + e.getMessage());
 		}
 		return result;
+	}
+	
+	@Operation(summary = "투게더 게시글 수정")
+	@PostMapping("/posts/{boardId}")
+	public ResponseEntity<?> updatePost(
+			@PathVariable("boardId") Long boardId, 
+			@RequestPart("data") TogetherBoardDto postDto,
+			@RequestPart(value = "files", required = false) List<MultipartFile> files,
+			@AuthenticationPrincipal UserPrincipal principal) {
+		try {
+			togetherBoardService.updatePost(postDto, files, principal.getEmpNo());
+			
+			return ResponseEntity.ok(Map.of(
+    	            "success", true,
+    	            "message", "게시글이 성공적으로 수정되었습니다."
+    	        ));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("success", false, "message", "수정 중 오류 발생: " + e.getMessage()));
+		}
+	}
+	
+	@Operation(summary = "투게더 게시글 삭제")
+	@PostMapping("/posts/{boardId}/delete")
+	public ResponseEntity<Map<String, Object>> deletePost(
+			@PathVariable("boardId") Long boardId, 
+			@AuthenticationPrincipal UserPrincipal principal) {
+		try {
+			togetherBoardService.deletePost(boardId, principal.getEmpNo());
+			
+			return ResponseEntity.ok(Map.of(
+		            "success", true,
+		            "message", "게시글 삭제되었습니다."
+		        ));
+		} catch (Exception e) {
+			e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+	                .body(Map.of("success", false, "message", "삭제 중 오류가 발생했습니다."));
+		}
 	}
 	
 	@Operation(summary = "투게더 게시글 조회수 증가")

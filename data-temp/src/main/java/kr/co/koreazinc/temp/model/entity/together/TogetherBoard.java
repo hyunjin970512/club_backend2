@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -61,4 +62,29 @@ public class TogetherBoard {
 
     @Column(name = "update_date")
     private LocalDateTime updateDate;
+    
+    /**
+     * 게시글 수정
+     */
+    @Transactional
+    public void update(String clubCode, String togetherCode, String title, String content, String noticeDt, String updateUser) {
+    	this.clubCode = clubCode;
+    	this.togetherCode = togetherCode;
+    	this.title = title;
+        this.content = content;
+        this.noticeDt = noticeDt;
+        this.updateUser = updateUser;
+        this.updateDate = LocalDateTime.now();
+    }
+    
+    /**
+     * 게시글 삭제
+     */
+    @Transactional
+    public void delete(String updateUser) {
+    	this.deleteYn = "Y";
+    	this.updateUser = updateUser;
+    	this.updateDate = LocalDateTime.now();
+    }
+    
 }

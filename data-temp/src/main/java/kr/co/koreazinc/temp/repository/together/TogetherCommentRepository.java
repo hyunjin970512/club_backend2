@@ -3,6 +3,7 @@ package kr.co.koreazinc.temp.repository.together;
 import static kr.co.koreazinc.temp.model.entity.account.QCoEmplBas.coEmplBas;
 import static kr.co.koreazinc.temp.model.entity.together.QTogetherComment.togetherComment;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,5 +85,22 @@ public class TogetherCommentRepository extends AbstractJpaRepository<TogetherCom
 		if (entity != null && entity.getBoardId().getBoardId().equals(boardId)) {
 			entity.deleteComment(userEmpNo);
 		}
+	}
+	
+	/**
+	 * 게시글 삭제 시 관련 댓글 전체 삭제 처리 (Soft Delete)
+	 */
+	@Transactional
+	public void deleteCommentsByBoardId(Long boardId, String userEmpNo) {
+		queryFactory
+        .update(togetherComment)
+        .set(togetherComment.deleteYn, "Y")
+        .set(togetherComment.updateUser, userEmpNo)
+        .set(togetherComment.updateDate, LocalDateTime.now())
+        .where(
+            togetherComment.boardId.boardId.eq(boardId),
+            togetherComment.deleteYn.eq("N") // 이미 삭제된 건 제외
+        )
+        .execute();
 	}
 }

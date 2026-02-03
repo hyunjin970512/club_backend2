@@ -2,6 +2,7 @@ package kr.co.koreazinc.app.service.together;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -11,8 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 import kr.co.koreazinc.app.model.together.TogetherBoardDto;
 import kr.co.koreazinc.app.model.together.TogetherCommentDto;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
+import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
 import kr.co.koreazinc.temp.model.entity.together.TogetherBoard;
 import kr.co.koreazinc.temp.model.entity.together.TogetherComment;
+import kr.co.koreazinc.temp.repository.comm.CommonMappingDocRepository;
 import kr.co.koreazinc.temp.repository.together.TogetherBoardRepository;
 import kr.co.koreazinc.temp.repository.together.TogetherCommentRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ public class TogetherBoardService {
 	private final TogetherBoardRepository togetherBoardRepository;
 	private final TogetherCommentRepository togetherCommentRepository;
 	private final CommonDocService commonDocService;
+	private final CommonMappingDocRepository commonMappingDocRepository;
 	
 	/**
      * 투게더 게시글 작성
@@ -63,6 +67,65 @@ public class TogetherBoardService {
 			}
 		}
 		return boardId;
+	}
+	
+	/**
+     * 투게더 게시글 수정
+     */
+	@Transactional
+	public void updatePost(TogetherBoardDto dto, List<MultipartFile> files, String empNo) throws Exception {
+		TogetherBoard post = togetherBoardRepository.findOne(dto.getBoardId());
+		long boardId = dto.getBoardId();
+		String jobSeCode = "TO";
+		
+		if(!post.getCreateUser().equals(empNo)) {
+			throw new SecurityException("본인이 작성한 글만 수정할 수 있습니다.");
+		}
+		
+		// 게시글 정보 업데이트
+		post.update(dto.getClubCode(), dto.getTogetherCode(), dto.getTitle(), dto.getContent(), dto.getNoticeDt(), empNo);
+		
+		// 현재 맵핑된 파일 리스트 조회
+		List<CommonMappingDoc> currentMappings = commonMappingDocRepository.findByRefId(boardId);
+		// 유지할 파일 ID 목록
+		List<Long> keepFileIds = dto.getExistFileId() != null ? dto.getExistFileId() : new ArrayList<>();
+		
+		// 삭제처리
+		for (CommonMappingDoc mapping : currentMappings) {
+			if (!keepFileIds.contains(mapping.getDocNo())) {
+				commonDocService.deleteFile(boardId, mapping.getDocNo(), jobSeCode, empNo);
+			}
+		}
+		
+		// 신규 추가
+		if (files != null && !files.isEmpty()) {
+			for (MultipartFile file : files) {
+				if (!file.isEmpty()) {
+					Long newDocNo = commonDocService.saveFile(file, jobSeCode, empNo);
+					commonDocService.saveMapping(boardId, newDocNo, empNo);
+				}
+			}
+		}
+	}
+	
+	/**
+     * 투게더 게시글 삭제
+     */
+	@Transactional
+	public void deletePost(Long boardId, String empNo) throws Exception {
+		TogetherBoard post = togetherBoardRepository.findOne(boardId);
+		
+		if (post == null) {
+			throw new RuntimeException("해당 게시글을 찾을 수 없습니다.");
+		}
+		
+		if (!post.getCreateUser().equals(empNo)) {
+	        throw new SecurityException("본인이 작성한 글만 삭제할 수 있습니다.");
+	    }
+		// 게시글 삭제
+		post.delete(empNo);
+		// 해당 게시글의 모든 댓글 삭제
+		togetherCommentRepository.deleteCommentsByBoardId(boardId, empNo);
 	}
 	
 	/**
