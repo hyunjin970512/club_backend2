@@ -126,6 +126,14 @@ public class TogetherBoardService {
 		post.delete(empNo);
 		// 해당 게시글의 모든 댓글 삭제
 		togetherCommentRepository.deleteCommentsByBoardId(boardId, empNo);
+		// 첨부파일 삭제
+		List<CommonMappingDoc> mapping = commonMappingDocRepository.findByRefId(boardId);
+		
+		if (mapping != null) {
+			for (CommonMappingDoc map : mapping) {
+				commonDocService.deleteFile(boardId, map.getDocNo(), "TO", empNo);
+			}
+		}
 	}
 	
 	/**

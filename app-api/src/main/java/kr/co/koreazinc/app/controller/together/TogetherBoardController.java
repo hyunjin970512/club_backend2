@@ -144,13 +144,15 @@ public class TogetherBoardController {
 	
 	@Operation(summary = "투게더 게시글 상세 조회")
     @GetMapping("/posts/{boardId}")
-	public Map<String, Object> getTogetherPostDetail(@PathVariable("boardId") Long boardId) {
+	public Map<String, Object> getTogetherPostDetail(@PathVariable("boardId") Long boardId, @AuthenticationPrincipal UserPrincipal principal) {
 		Map<String, Object> result = new HashMap<>();
 		
 		try {
+			String loginEmpNo = (principal != null) ? principal.getEmpNo() : "";
 			TogetherBoardDto data = togetherBoardService.getTogetherPostDetail(boardId);
 			
 			if (data != null) {
+				data.setLoginEmpNo(loginEmpNo);
 				result.put("success", true);
 				result.put("data", data);
 			} else {

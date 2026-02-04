@@ -227,8 +227,17 @@ public class ClubDetailService {
 				log.error("삭제 실패: 게시글 존재하지 않음 (ID: {})", dto.getBoardId());
 	            return false;
 			}
-			
+			// 게시물, 댓글 삭제
 			post.deletePost(dto.getUserEmpNo());
+			// 첨부파일 삭제
+			List<CommonMappingDoc> mapping = commonMappingDocRepository.findByRefId((long) dto.getBoardId());
+			
+			if (mapping != null) {
+				for (CommonMappingDoc map : mapping) {
+					commonDocService.deleteFile((long) dto.getBoardId(), map.getDocNo(), "CB", dto.getUserEmpNo());
+				}
+			}
+			
 			return true;
 		} catch (Exception e) {
 			log.error("게시글 저장 중 서버 에러 발생: {}", e.getMessage());

@@ -48,6 +48,8 @@ public class TogetherBoardDto {
     
     private String authorPosition;
     
+    private String loginEmpNo;
+    
     @Schema(description = "첨부파일 목록")
     private List<FileDto> files;
     

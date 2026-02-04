@@ -34,4 +34,6 @@ public class TogetherCommentDto {
     private LocalDateTime updateDate;
     
     private String deleteYn;
+    
+    private String loginEmpNo;
 }
