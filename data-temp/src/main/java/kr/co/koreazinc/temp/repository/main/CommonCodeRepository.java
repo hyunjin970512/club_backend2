@@ -76,6 +76,7 @@ public class CommonCodeRepository extends AbstractJpaRepository<CoCommonCode, Co
         )
         .eqMainCode(MAIN_CODE_CLUB_TYPE)
         .neSubCode("@")
+        .neSubCode("ET")
         .onlyUseY()
         .orderByUpdateDateAsc();
     }

@@ -29,6 +29,7 @@ import kr.co.koreazinc.spring.util.CommonMap;
 import kr.co.koreazinc.temp.model.converter.detail.ClubBoardConverter;
 import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
 import kr.co.koreazinc.temp.model.entity.detail.ClubBoard;
+import kr.co.koreazinc.temp.model.entity.detail.ClubComment;
 import kr.co.koreazinc.temp.model.entity.main.ClubCreateRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
@@ -38,6 +39,7 @@ import kr.co.koreazinc.temp.repository.detail.ClubBoardRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubCommentRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubDetailRepository;
 import kr.co.koreazinc.temp.repository.detail.ClubJoinRequestRepository;
+import kr.co.koreazinc.temp.repository.form.ClubBoardEmpNoDataRepository;
 import kr.co.koreazinc.temp.repository.form.ClubCreateRequestRepository;
 import kr.co.koreazinc.temp.repository.main.ClubRepository;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +60,8 @@ public class ClubDetailService {
 	private final CommonMappingDocRepository commonMappingDocRepository;
 	private final ClubRepository clubRepository;
 	private final ClubCreateRequestRepository clubCreateRequestRepository;
+	
+	private final ClubBoardEmpNoDataRepository clubBoardEmpNoDataRepository;
 
 	//push
 	private final PushFacade pushFacade;
@@ -316,7 +320,50 @@ public class ClubDetailService {
      */
 	@Transactional
 	public void saveComment(ClubCommentDto dto) {
-		clubCommentRepository.insert(dto);
+		
+//		clubCommentRepository.insert(dto);
+		
+		ClubComment saved = clubCommentRepository.insert(dto);
+		Long commentId = saved.getCommentId();
+		String boardId = String.valueOf(dto.getBoardId());
+		Integer clubId;
+		
+		var row = clubBoardEmpNoDataRepository.selectReceiversByCommentId(Long.valueOf(commentId));
+		
+		// 게시판 작성자
+		String boardReceiver = row.getBoardReceiver();
+		// 댓글 작성자
+		String parentCommentReceiver = row.getCommentReceiver();
+		// 동호회 아이디
+		clubId = row.getClubId();
+		
+		PushType pushType;
+		List<String> receivers;
+		
+		
+		if (dto.getParentCommentId() == null) {
+			// 댓글: 게시글 작성자에게
+			pushType = PushType.COMMENT_CREATED;
+			receivers = (boardReceiver == null) ? List.of() : List.of(boardReceiver);
+		} else {
+			// 대댓글: 부모댓글 작성자에게
+			pushType = PushType.REPLY_CREATED;
+			receivers = (parentCommentReceiver == null) ? List.of() : List.of(parentCommentReceiver);
+		}
+		
+		Map<String, Object> data = Map.of(
+				"commenterNm", currentUser.nameKoreanOrThrow(),
+				"clubId", clubId,
+				"postId", boardId
+				);
+		
+		pushFacade.send(
+				pushType,
+				receivers,
+				data,
+				currentUser.empNoOrThrow()
+			);
+		
 	}
 	
 	/**

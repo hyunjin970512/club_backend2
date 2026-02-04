@@ -23,42 +23,42 @@ public class PushTemplateService {
 			case CLUB_JOIN_REQUEST -> payload(
 				v(data,"clubNm") + " 가입 신청",
 				v(data,"applicantNm") + "님이 가입 신청했습니다.",
-				"/club/join/requests?clubId=" + v(data,"clubId"),
+				"/detail/" + v(data,"clubId"),
 				map("type","CLUB_JOIN_REQUEST","clubId", v(data,"clubId"))
 			);
 			
 			case CLUB_JOIN_APPROVED -> payload(
 				v(data,"clubNm") + " 가입 승인",
 				"가입이 승인되었습니다.",
-				"/club?clubId=" + v(data,"clubId"),
+				"/detail/" + v(data,"clubId"),
 				map("type","CLUB_JOIN_APPROVED","clubId", v(data,"clubId"))
 			);
 			
 			case CLUB_JOIN_REJECTED -> payload(
 				v(data,"clubNm") + " 가입 거절",
 				"가입이 거절되었습니다.",
-				"/club?clubId=" + v(data,"clubId"),
+				"/detail/" + v(data,"clubId"),
 				map("type","CLUB_JOIN_REJECTED","clubId", v(data,"clubId"))
 			);
 			
 			case POST_CREATED -> payload(
 				"[" + v(data,"clubNm") + "] 새 게시글",
 				v(data,"authorNm") + " : " + v(data,"postTitle"),
-				"/club/board?clubId=" + v(data,"clubId") + "&postId=" + v(data,"postId"),
+				"/detail/" + v(data,"clubId") + "/post/" + v(data,"postId"),
 				map("type","POST_CREATED","clubId", v(data,"clubId"), "postId", v(data,"postId"))
 			);
 			
 			case COMMENT_CREATED -> payload(
 				"새 댓글",
 				v(data,"commenterNm") + "님이 댓글을 남겼습니다.",
-				"/club/board?clubId=" + v(data,"clubId") + "&postId=" + v(data,"postId"),
+				"/detail/" + v(data,"clubId") + "/post/" + v(data,"postId"),
 				map("type","COMMENT_CREATED","postId", v(data,"postId"))
 			);
 			
 			case REPLY_CREATED -> payload(
 				"새 대댓글",
-				v(data,"replierNm") + "님이 대댓글을 남겼습니다.",
-				"/club/board?clubId=" + v(data,"clubId") + "&postId=" + v(data,"postId"),
+				v(data,"commenterNm") + "님이 대댓글을 남겼습니다.",
+				"/detail/" + v(data,"clubId") + "/post/" + v(data,"postId"),
 				map("type","REPLY_CREATED","postId", v(data,"postId"))
 			);
 		};
