@@ -353,13 +353,34 @@ public class ClubDetailService {
 		String status = (String) param.get("status");
 		String updateUser = (String) param.get("updateUser");
 		
+		// 동호회명 조회
+		String clubName = this.getClubDetail(Math.toIntExact(clubId)).getClubName();
+		PushType pushType = null;
+		
+		Map<String, Object> data = Map.of(
+				"clubNm", clubName,
+				"clubId", clubId
+			);
+		
 		// 요청 상태 변경
 		long updateCnt = clubJoinRequestRepository.updateJoinRequestStatus(clubId, requestEmpNo, status, updateUser);
 		
 		// 승인일 경우에만 멤버 추가
 		if(status.equals("20")) {
 			clubJoinRequestRepository.insertClubMember(clubId, requestEmpNo, updateUser);
+			pushType = PushType.CLUB_JOIN_APPROVED;
+		// 가입 거절
+		}else if(status.equals("30")) {
+			pushType = PushType.CLUB_JOIN_REJECTED;
 		}
+		
+		pushFacade.send(
+				pushType,
+				List.of(requestEmpNo),
+				data,
+				currentUser.empNoOrThrow()
+				);
+		
 		return updateCnt > 0;
 	}
 	
