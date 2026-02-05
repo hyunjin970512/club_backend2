@@ -87,9 +87,12 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
                     ccr.clubDesc    // clubDesc
                 ))
                 .from(ccr)
-                .join(ci).on(ccr.clubId.eq(ci.clubId))
+                .join(ci).on(
+                		ccr.clubId.eq(ci.clubId),
+                		ci.status.notIn("40", "50")
+                		)
                 .join(cui).on(ci.clubId.eq(cui.clubId))
-        ).joinedOnly(); // ✅ status='20' 기본 적용
+        ).joinedOnly(); // ✅ status='10' 기본 적용
     }
     
     /**
