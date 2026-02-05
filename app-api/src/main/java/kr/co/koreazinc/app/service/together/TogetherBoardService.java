@@ -4,18 +4,26 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import kr.co.koreazinc.app.model.main.ClubMemberDto;
+import kr.co.koreazinc.app.model.push.PushType;
 import kr.co.koreazinc.app.model.together.TogetherBoardDto;
 import kr.co.koreazinc.app.model.together.TogetherCommentDto;
+import kr.co.koreazinc.app.service.account.CurrentUserService;
 import kr.co.koreazinc.app.service.comm.CommonDocService;
+import kr.co.koreazinc.app.service.push.PushFacade;
+import kr.co.koreazinc.temp.model.entity.account.CoEmplBas;
 import kr.co.koreazinc.temp.model.entity.comm.CommonMappingDoc;
 import kr.co.koreazinc.temp.model.entity.together.TogetherBoard;
 import kr.co.koreazinc.temp.model.entity.together.TogetherComment;
 import kr.co.koreazinc.temp.repository.comm.CommonMappingDocRepository;
+import kr.co.koreazinc.temp.repository.main.GetCoEmpListForTogether;
+import kr.co.koreazinc.temp.repository.main.GetTogetherCommentReceiverRepository;
 import kr.co.koreazinc.temp.repository.together.TogetherBoardRepository;
 import kr.co.koreazinc.temp.repository.together.TogetherCommentRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +36,14 @@ public class TogetherBoardService {
 	private final TogetherCommentRepository togetherCommentRepository;
 	private final CommonDocService commonDocService;
 	private final CommonMappingDocRepository commonMappingDocRepository;
+	
+	private final GetCoEmpListForTogether getTogetherDataRepository;
+	private final GetTogetherCommentReceiverRepository getTogetherCommentReceiverRepository;
+	
+	//push
+	private final PushFacade pushFacade;
+	
+	private final CurrentUserService currentUser;
 	
 	/**
      * 투게더 게시글 작성
@@ -66,6 +82,33 @@ public class TogetherBoardService {
 				}
 			}
 		}
+		
+		String typeCd = "10".equals(dto.getTogetherCode()) ? "팀" : "20".equals(dto.getTogetherCode()) ? "반" : "";
+		
+		if(boardId != null) {
+			
+			List<String> empNos = getTogetherDataRepository.selectEmpNoListForTogether();
+			
+			Map<String, Object> data = Map.of(
+					"typeCd", typeCd,
+					"authorNm", currentUser.nameKoreanOrThrow(),
+					"postTitle", dto.getTitle(),
+					"boardId", boardId
+				);
+			
+			for (String sendEmpNo : empNos) {
+
+				/*if (empNo != null && empNo.equals(sendEmpNo)) continue;*/
+				
+				pushFacade.send(
+						PushType.POST_CREATED_TO,
+						List.of(sendEmpNo),
+						data,
+						empNo // createdByEmpNo
+						);
+			}
+		}
+		
 		return boardId;
 	}
 	
@@ -204,8 +247,50 @@ public class TogetherBoardService {
 				.updateDate(LocalDateTime.now())
 				.build();
 		
-		togetherCommentRepository.save(entity);
-	}
+//		togetherCommentRepository.save(entity);
+		
+		TogetherComment saved = togetherCommentRepository.save(entity);
+		Long commentId = saved.getCommentId();
+
+		var row = getTogetherCommentReceiverRepository.selectReceiversByCommentId(commentId);
+
+		String boardReceiver = row == null ? null : row.getBoardReceiver();
+		String parentReceiver = row == null ? null : row.getParentCommentReceiver();
+
+        PushType pushType;
+        List<String> receivers;
+
+        if (dto.getParentCommentId() == null) {
+            // 댓글 -> 게시글 작성자
+            pushType = PushType.COMMENT_CREATED_TO;
+            receivers = (boardReceiver == null) ? List.of() : List.of(boardReceiver);
+        } else {
+            // 대댓글 -> 부모댓글 작성자
+            pushType = PushType.REPLY_CREATED_TO;
+            receivers = (parentReceiver == null) ? List.of() : List.of(parentReceiver);
+        }
+
+        // 3) 본인 제외
+        /*
+        String me = currentUser.empNoOrThrow();
+        receivers = receivers.stream().filter(r -> r != null && !r.equals(me)).toList();
+        if (receivers.isEmpty()) return;
+		*/
+        
+        // 4) payload data
+        Map<String, Object> data = Map.of(
+            "commenterNm", currentUser.nameKoreanOrThrow(),
+            "boardId", dto.getBoardId()
+        );
+
+        // 5) 푸시 발송
+        pushFacade.send(
+            pushType,
+            receivers,
+            data,
+            currentUser.empNoOrThrow()
+        );
+    }
 	
 	/**
      * 투게더 댓글 수정
