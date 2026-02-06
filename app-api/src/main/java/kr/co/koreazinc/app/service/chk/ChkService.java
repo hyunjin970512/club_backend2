@@ -26,7 +26,8 @@ public class ChkService {
 			e.getPositionCd(),
 			e.getCmpEmail(),
 			e.getConEmail(),
-			e.getProxyEmail()
+			e.getProxyEmail(),
+			null
 		);
 	  }
 	

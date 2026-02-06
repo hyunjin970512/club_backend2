@@ -53,6 +53,9 @@ public class VClubDetail {
     @Column(name = "request_nm")
     private String requestNm;
     
+    @Column(name = "request_emp_no")
+    private String requestEmpNo;
+    
     @Column(name = "dept_cd")
     private String deptCd;
     

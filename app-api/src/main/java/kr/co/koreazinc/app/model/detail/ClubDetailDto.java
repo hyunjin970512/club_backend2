@@ -35,6 +35,7 @@ public class ClubDetailDto {
         private String companyNm;
         private String positionCd;
         private String requestNm;
+        private String requestEmpNo;
         private String purpose;
         private String deptCd;
         private String docFileNm;
