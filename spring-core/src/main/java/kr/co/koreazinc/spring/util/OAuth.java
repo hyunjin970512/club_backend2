@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -24,6 +25,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true) // ✅ auth 응답 필드 늘어나도 안 터짐
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Schema(description = "OAuth 인증 정보")
 public class OAuth {
@@ -60,6 +62,9 @@ public class OAuth {
 
     @Schema(description = "오류 참고 페이지")
     String errorUri;
+
+    @Schema(description = "액세스 토큰 유효 기간(초) - 별도 필드")
+    Integer accessTokenExpiresIn;
 
     @JsonIgnore
     public boolean isError() {

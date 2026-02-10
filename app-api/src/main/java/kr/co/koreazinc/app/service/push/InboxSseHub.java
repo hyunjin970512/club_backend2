@@ -11,6 +11,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import kr.co.koreazinc.temp.model.entity.push.PushInbox;
+
 import kr.co.koreazinc.app.model.push.PushPayloadDto;
 import kr.co.koreazinc.temp.model.entity.push.PushMessage;
 
@@ -104,4 +106,58 @@ public class InboxSseHub {
 			emitters.remove(empNo);
 		}
 	}
+	
+	// 해당 empNo가 SSE 연결중인지
+	public boolean isOnline(String empNo) {
+	    if (empNo == null || empNo.isBlank()) return false;
+	    List<SseEmitter> list = emitters.get(empNo);
+	    return list != null && !list.isEmpty();
+	}
+
+	// 여러 명 중 온라인인 사람 제외하고(=오프라인만) 반환
+	public List<String> offlineOnly(List<String> empNos) {
+	    if (empNos == null || empNos.isEmpty()) return List.of();
+	    return empNos.stream()
+	            .filter(e -> e != null && !e.isBlank())
+	            .map(String::trim)
+	            .filter(e -> !e.isEmpty())
+	            .filter(e -> !isOnline(e))
+	            .distinct()
+	            .toList();
+	}
+	
+	public void broadcastInbox(List<PushInbox> inboxRows, PushMessage msg) {
+	    if (inboxRows == null || inboxRows.isEmpty() || msg == null) return;
+
+	    for (PushInbox inbox : inboxRows) {
+	        String empNo = inbox.getEmpNo();
+	        if (empNo == null || empNo.isBlank()) continue;
+
+	        List<SseEmitter> list = emitters.get(empNo);
+	        if (list == null || list.isEmpty()) continue;
+
+	        Map<String, Object> payload = new HashMap<>();
+	        payload.put("inboxId", inbox.getId());          // ✅ 핵심
+	        payload.put("messageId", msg.getId());
+	        payload.put("eventType", msg.getEventType());
+	        payload.put("title", msg.getTitle());
+	        payload.put("body", msg.getBody());
+	        payload.put("linkUrl", msg.getLinkUrl());
+	        payload.put("payloadJson", msg.getPayloadJson());
+	        payload.put("createdAt",
+	            msg.getCreatedAt() != null ? ISO.format(msg.getCreatedAt()) : null
+	        );
+
+	        List<SseEmitter> snapshot = new ArrayList<>(list);
+	        for (SseEmitter emitter : snapshot) {
+	            try {
+	                emitter.send(SseEmitter.event().name("push").data(payload));
+	            } catch (Exception e) {
+	                removeEmitter(empNo, emitter);
+	            }
+	        }
+	    }
+	}
+
+
 }

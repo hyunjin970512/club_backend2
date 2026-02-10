@@ -8,54 +8,76 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.auth0.jwk.Jwk;
-import com.auth0.jwk.JwkException;
-import com.auth0.jwk.JwkProvider;
-import com.auth0.jwk.UrlJwkProvider;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwk.*;
+import com.auth0.jwt.*;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.InvalidClaimException;
-import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.auth0.jwt.exceptions.*;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import kr.co.koreazinc.spring.exception.TokenIssuanceException;
 import kr.co.koreazinc.spring.util.OAuth;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @UtilityClass
 public class OAuthUtils {
 
-    public String issuedToken(String tokenUrl, String clientId, String clientSecret, String scope) throws TokenIssuanceException {
+    private static final ObjectMapper OM = new ObjectMapper();
+
+    public String issuedToken(String tokenUrl, String clientId, String clientSecret, String scope) {
         try {
-            OAuth responesDto = WebClient.create().post()
+            String raw = WebClient.create()
+                .post()
                 .uri(tokenUrl)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .accept(MediaType.APPLICATION_JSON)
+
+                // ✅ 서버가 BasicAuth 요구할 수도 있음 (이거 하나로 판가름 난다)
+                .headers(h -> h.setBasicAuth(clientId, clientSecret))
+
+                // ✅ 그래도 폼에도 같이 넣어둠(서버 구현마다 다름)
                 .body(fromFormData("grant_type", "client_credentials")
-                            .with("client_id", clientId)
-                            .with("client_secret", clientSecret)
-                            .with("scope", scope))
-                .exchangeToMono(response->{
-                    return response.bodyToMono(OAuth.class);
-                }).block();
-            if (responesDto.isError()) {
-                log.error("OAuthUtils - issuedToken: Error Url = " + responesDto.getError());
-                throw new TokenIssuanceException();
+                    .with("client_id", clientId)
+                    .with("client_secret", clientSecret)
+                    .with("scope", scope))
+
+                .exchangeToMono(resp ->
+                    resp.bodyToMono(String.class)
+                        .defaultIfEmpty("")
+                        .flatMap(body -> {
+                            int code = resp.statusCode().value();
+                            log.info("[OAUTH] tokenUrl={}", tokenUrl);
+                            log.info("[OAUTH] status={}, body={}", code, body);
+
+                            if (code >= 400) {
+                                return Mono.error(new RuntimeException("token issuance failed: " + code + " / " + body));
+                            }
+                            return Mono.just(body);
+                        })
+                )
+                .block();
+
+            OAuth dto = OM.readValue(raw, OAuth.class);
+
+            if (dto == null || dto.getAccessToken() == null || dto.getAccessToken().isBlank()) {
+                throw new RuntimeException("access_token missing. raw=" + raw);
             }
-            return responesDto.getAccessToken();
+            return dto.getAccessToken();
+
         } catch (Exception e) {
-            log.error("OAuthUtils - issuedToken: " + e.getMessage());
+            log.error("OAuthUtils - issuedToken failed: {}", e.getMessage(), e);
             throw new TokenIssuanceException();
         }
     }
+
 
     public boolean validationToken(String oAuth, String discoveryUrl) {
         try {

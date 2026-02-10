@@ -7,6 +7,7 @@ import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import kr.co.koreazinc.app.model.push.AppPushPayloadDto;
 import kr.co.koreazinc.app.model.push.PushPayloadDto;
 import kr.co.koreazinc.app.model.push.PushType;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,9 @@ public class PushFacade {
 	private final InboxNotifyService inboxNotifyService;
 	private final WebPushSendService webPushSendService;
 	private final InboxSseHub inboxSseHub;
+	
+	private final AppPushSendService appPushSendService;
+	private final AppPushTemplateService appTemplateService;
 	
 	/**
 	 * 공통 푸시 발송
@@ -46,6 +50,9 @@ public class PushFacade {
 			
 		// 2️ 템플릿 생성
 		PushPayloadDto payload = templateService.build(type, data);
+		
+		AppPushPayloadDto appPayload = appTemplateService.build(type, data);
+		
 		if (payload == null) return;
 			
 		// 3️ DB 저장(트랜잭션) + 커밋 후 훅 등록
@@ -58,16 +65,26 @@ public class PushFacade {
 														payload.getPayloadJson(),
 														createdByEmpNo,
 														() -> {
-															// 4 SSE
-															inboxSseHub.publishToEmpNos(targets, payload);
+															// 4 SSE > InboxNotifyService > 3) 커밋 후 작업 실행 (SSE/WebPush) 으로 변경
+															//inboxSseHub.publishToEmpNos(targets, payload);
 															
-															webPushSendService.sendToEmpNos(
-																							targets,
-																							payload.getTitle(),
-																							payload.getBody(),
-																							payload.getLinkUrl(),
-																							payload.getPayloadJson()
-																							);
+															// 웹푸시는 오프라인만
+															List<String> offlineTargets = inboxSseHub.offlineOnly(targets);
+															if (!offlineTargets.isEmpty()) {
+															    webPushSendService.sendToEmpNos(
+															        offlineTargets,
+															        payload.getTitle(),
+															        payload.getBody(),
+															        payload.getLinkUrl(),
+															        payload.getPayloadJson()
+															    );
+															}
+															
+															 appPushSendService.sendToEmpNos(
+											                            targets,
+											                            appPayload.getTitle(),
+											                            appPayload.getContent()
+											                    );
 														}
 													);
 		

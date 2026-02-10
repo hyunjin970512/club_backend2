@@ -9,7 +9,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import jakarta.servlet.http.Cookie;
 import kr.co.koreazinc.app.authentication.AuthorizationAccessChecker;
 import kr.co.koreazinc.app.authentication.TokenAuthenticationProvider;
 import kr.co.koreazinc.app.service.security.UserDetailsServiceImpl;
@@ -20,6 +19,7 @@ import kr.co.koreazinc.spring.security.authorization.BasicAccessDeniedHandler;
 import kr.co.koreazinc.spring.security.authorization.BasicAuthenticationEntryPoint;
 import kr.co.koreazinc.spring.security.filter.TokenAuthenticationFilter;
 import kr.co.koreazinc.spring.security.model.ResponseToken;
+import kr.co.koreazinc.spring.security.utility.AuthenticationTokenUtils;
 import lombok.RequiredArgsConstructor;
 
 @EnableWebSecurity
@@ -28,10 +28,10 @@ import lombok.RequiredArgsConstructor;
 @Configuration(proxyBeanMethods = false)
 public class WebSecurityConfig {
 
-    // ✅ 쿠키명 통일
-    private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
-    // ✅ 레거시 쿠키명(청소용)
-    private static final String ACCESS_TOKEN_COOKIE_LEGACY = "ACCESS-TOKEN";
+    // ✅ 표준앱 쿠키명 (메인)
+    private static final String ACCESS_TOKEN_COOKIE = "ACCESS-TOKEN";
+    // ✅ 레거시/구버전 쿠키명 (청소용)
+    private static final String ACCESS_TOKEN_COOKIE_LEGACY = "ACCESS_TOKEN";
 
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthorizationAccessChecker accessChecker;
@@ -48,27 +48,29 @@ public class WebSecurityConfig {
                     "/swagger-ui/**",
                     "/api-docs/**",
                     "/api/auth/login",
-                    "/api/clubs/**",
-                    "/api/together/**",
                     "/oauth/callback",
+                    "/oauth/refresh",          // refresh는 인증없이 호출 가능하게(401 대응용)
                     "/api/common/doc/download/**",
                     "/api/club/join/check/**",
-                    "/api/inbox/stream"
+                    "/api/inbox/stream",
+                    "/api/push/app/**",
+
+                    "/api/clubs/**",
+                    "/api/together/**"
                 ).permitAll()
-                
+
+                .requestMatchers("/api/inbox/**").authenticated()
+
                 .requestMatchers(
-                		"/api/inbox/**"
-                		).authenticated()
-                
-                .requestMatchers(
-                		"/api/**",
-                		"/main/**",
-                		"/api/club/**"
-                		).access(accessChecker)
+                    "/api/**",
+                    "/main/**",
+                    "/api/club/**"
+                ).access(accessChecker)
+
                 .anyRequest().permitAll()
             );
 
-            // ✅ API 요청에만 토큰 인증 필터 적용
+            // ✅ /api/** 에만 토큰 인증 필터 적용
             security.addFilterAt(tokenAuthenticationFilter(), BasicAuthenticationFilter.class);
 
             security.exceptionHandling(handler -> handler
@@ -89,36 +91,24 @@ public class WebSecurityConfig {
 
     @Bean
     public TokenAuthenticationFilter tokenAuthenticationFilter() {
-        // ✅ /api/** 에만 적용
         TokenAuthenticationFilter filter =
             new TokenAuthenticationFilter(new AntPathRequestMatcher("/api/**"));
 
         filter.setAuthenticationManager(authenticationManager());
         filter.setAuthenticationEntryPoint(authenticationEntryPoint);
 
-        // ✅ 토큰 읽기: Authorization 헤더 → Cookie(ACCESS_TOKEN) → 레거시(ACCESS-TOKEN)
+        /**
+         * 표준앱 방식으로 통일:
+         * - Authorization 헤더(Bearer) 우선
+         * - 없으면 Cookie(ACCESS-TOKEN)
+         * (유틸에 이미 구현돼있음)
+         */
         filter.setGetToken((request, response) -> {
-            String token = null;
+            String token = AuthenticationTokenUtils.getAccessToken(request);
 
-            // 1) Authorization: Bearer xxx
-            String auth = request.getHeader("Authorization");
-            if (auth != null && auth.startsWith("Bearer ")) {
-                token = auth.substring(7);
-            }
-
-            // 2) Cookie ACCESS_TOKEN
+            // 혹시 예전 쿠키 ACCESS_TOKEN만 남아있으면 fallback
             if ((token == null || token.isBlank()) && request.getCookies() != null) {
-                for (Cookie c : request.getCookies()) {
-                    if (ACCESS_TOKEN_COOKIE.equals(c.getName())) {
-                        token = c.getValue();
-                        break;
-                    }
-                }
-            }
-
-            // 3) Legacy cookie ACCESS-TOKEN
-            if ((token == null || token.isBlank()) && request.getCookies() != null) {
-                for (Cookie c : request.getCookies()) {
+                for (jakarta.servlet.http.Cookie c : request.getCookies()) {
                     if (ACCESS_TOKEN_COOKIE_LEGACY.equals(c.getName())) {
                         token = c.getValue();
                         break;
@@ -126,18 +116,17 @@ public class WebSecurityConfig {
                 }
             }
 
-            // 너무 길게 찍지 말고 존재 여부만
-            System.out.println("[GETTOKEN] uri=" + request.getRequestURI() + ", tokenPresent=" + (token != null && !token.isBlank()));
+            System.out.println("[GETTOKEN] uri=" + request.getRequestURI()
+                + ", tokenPresent=" + (token != null && !token.isBlank()));
 
             return ResponseToken.builder().accessToken(token).build();
         });
 
-        // ✅ 실패/로그아웃 시 쿠키 정리 (두 개 다 삭제)
+        // ✅ 실패 시 쿠키 정리 (둘 다 삭제)
         filter.setClearToken((request, response) -> {
             HttpEnhancer.create(request, response).delCookie(ACCESS_TOKEN_COOKIE);
             HttpEnhancer.create(request, response).delCookie(ACCESS_TOKEN_COOKIE_LEGACY);
         });
-
 
         return filter;
     }

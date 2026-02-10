@@ -27,18 +27,22 @@ public class InboxController {
 	 * 알림 목록 조회
 	 */
 	@GetMapping
-	public List<InboxItemDto> list(@RequestParam(defaultValue = "50") int size) {
-		String empNo = currentUserService.empNoOrThrow();
-		return inboxQueryService.list(empNo, size);
+	public List<InboxItemDto> list(
+			@RequestParam(name = "size", defaultValue = "5") int size,
+			@RequestParam(name = "unreadOnly", required = false) Boolean unreadOnly
+	) {
+	    String empNo = currentUserService.empNoOrThrow();
+	    return inboxQueryService.list(empNo, size, unreadOnly);
 	}
 	
 	/**
 	 * 읽음 처리
 	 */
 	@PostMapping("/{inboxId}/read")
-	public void read(@PathVariable Long inboxId) {
-		String empNo = currentUserService.empNoOrThrow();
-		inboxQueryService.markRead(empNo, inboxId);
+	public Map<String, Object> read(@PathVariable("inboxId") Long inboxId) {
+	    String empNo = currentUserService.empNoOrThrow();
+	    inboxQueryService.markRead(empNo, inboxId);
+	    return Map.of("success", true);
 	}
 	
 	/**

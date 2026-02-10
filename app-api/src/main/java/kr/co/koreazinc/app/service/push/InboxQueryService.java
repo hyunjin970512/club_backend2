@@ -20,14 +20,16 @@ public class InboxQueryService {
 	 * 알림 목록 조회
 	 */
 	@Transactional(readOnly = true)
-	public List<InboxItemDto> list(String empNo, int size) {
-	
-		return inboxRepo
-				.selectInboxList(InboxItemDto.class)
-				.eqEmpNo(empNo)
-				.orderLatest()
-				.limit(size)
-				.fetch();
+	public List<InboxItemDto> list(String empNo, int size, Boolean unreadOnly) {
+	    var q = inboxRepo
+	            .selectInboxList(InboxItemDto.class)
+	            .eqEmpNo(empNo)
+	            .orderLatest()
+	            .limit(size);
+
+	    if (Boolean.TRUE.equals(unreadOnly)) q.unreadOnly();
+
+	    return q.fetch();
 	}
 	
 	/**
@@ -35,13 +37,13 @@ public class InboxQueryService {
 	 */
 	@Transactional
 	public void markRead(String empNo, Long inboxId) {
-	
-		PushInbox inbox = inboxRepo.findOneByIdAndEmpNo(inboxId, empNo);
-		if (inbox == null) {
-			throw new IllegalArgumentException("Inbox not found or not allowed");
-		}
-		
-		inbox.markRead();
+
+	    long updated = inboxRepo.markAsRead(inboxId, empNo);
+
+	    if (updated == 0) {
+	        // 이미 읽었거나, 없는 알림이거나, 남의 알림
+	        throw new IllegalArgumentException("Inbox not found or not allowed");
+	    }
 	}
 	
 	/**

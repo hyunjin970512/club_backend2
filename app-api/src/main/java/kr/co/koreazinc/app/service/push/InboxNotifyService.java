@@ -20,6 +20,8 @@ public class InboxNotifyService {
 	private final PushMessageRepository msgRepo;
 	private final PushInboxRepository inboxRepo;
 	
+	private final InboxSseHub inboxSseHub;
+	
 	/**
 	 * 인앱 알림 저장 + SSE 브로드캐스트
 	 * - PushMessage 저장
@@ -56,8 +58,9 @@ public class InboxNotifyService {
 		
 		// 2) 인박스 저장
 		List<PushInbox> rows = targets.stream()
-				.map(empNo -> PushInbox.of(empNo, msg.getId()))
-				.toList();
+			    .distinct()
+			    .map(empNo -> PushInbox.of(empNo, msg.getId()))
+			    .toList();
 		
 		if (!rows.isEmpty()) {
 			inboxRepo.saveAllInbox(rows);
@@ -70,6 +73,7 @@ public class InboxNotifyService {
 						@Override
 						public void afterCommit() {
 						    afterCommit.run();
+						    inboxSseHub.broadcastInbox(rows, msg);
 						}
 					}
 				);

@@ -4,13 +4,17 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import kr.co.koreazinc.spring.security.model.ResponseToken;
+import kr.co.koreazinc.spring.security.utility.AuthenticationTokenUtils;
 import kr.co.koreazinc.spring.security.property.OAuth2Property;
 import kr.co.koreazinc.spring.utility.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -22,23 +26,26 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class OAuthCallbackController {
 
-  private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
-  private static final String ACCESS_TOKEN_COOKIE_LEGACY = "ACCESS-TOKEN";
-
   private final RestTemplate restTemplate;
   private final OAuth2Property oauth2;
+
+  /**
+   * ✅ 표준앱 방식 (쿠키명/만료는 AuthenticationTokenUtils 기준)
+   * - Access  : ACCESS-TOKEN  (httpOnly=false)
+   * - Refresh : REFRESH-TOKEN (httpOnly=true)
+   */
 
   @GetMapping("/callback")
   public ResponseEntity<Void> callback(@RequestParam("code") String code, HttpServletRequest request) {
 
-    log.info("code={}", code);
+    log.info("[OAUTH] callback code={}", StringUtils.isNotBlank(code));
 
     OAuth2Property.Provider p = oauth2.getProvider(OAuth2Property.Provider.AUTH);
 
-    // ✅ redirect_uri는 yml의 "{URL}/oauth/callback" 기반으로 request로 생성
+    // redirect_uri는 yml의 "{URL}/oauth/callback" 기반으로 request로 생성
     String redirectUri = oauth2.getClient().getRedirect().getLoginURL(request);
 
-    // ✅ token/userinfo URL 만들기 (base-url + path)
+    // token/userinfo URL 만들기 (base-url + path)
     String tokenUrl = p.getBaseUrl() + p.getTokenUrl();
     String userinfoUrl = p.getBaseUrl() + p.getUserInfoUrl();
 
@@ -48,7 +55,7 @@ public class OAuthCallbackController {
     form.add("code", code);
     form.add("redirect_uri", redirectUri);
     form.add("client_id", oauth2.getClient().getId());
-    // secret 필요한 SSO면 여기 추가해야 함 (현재 형님은 기존에도 안 넣었으니 일단 생략)
+    // secret 필요한 SSO면 여기 추가
     // form.add("client_secret", oauth2.getClient().getSecret());
 
     HttpHeaders h = new HttpHeaders();
@@ -59,9 +66,8 @@ public class OAuthCallbackController {
         restTemplate.postForObject(tokenUrl, new HttpEntity<>(form, h), Map.class);
 
     String companyAccessToken = toNonNullString(tokenRes == null ? null : tokenRes.get("access_token"));
-    log.info("company token received={}", companyAccessToken != null);
-
     if (companyAccessToken == null) {
+      log.warn("[OAUTH] company access_token missing");
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
@@ -74,53 +80,140 @@ public class OAuthCallbackController {
         userinfoUrl, HttpMethod.GET, new HttpEntity<>(uh), Map.class
     ).getBody();
 
-    log.info("userinfo keys={}", me == null ? null : me.keySet());
-
     String userId = toNonNullString(me == null ? null : me.get("userId"));
     String empNo = extractEmpNoFromJob(me);
 
-    log.info("userId={}, empNo={}", userId, empNo);
+    log.info("[OAUTH] userId={}, empNo={}", userId, empNo);
 
     if (empNo == null) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    // 3) 우리 JWT 발급
-    String myJwt = JwtUtils.createToken(
-        Map.of("empNo", empNo, "userId", userId == null ? "" : userId),
-        JwtUtils.getPrivateKey(),
-        2 * 60 * 60 * 1000L
+    // 3) ✅ JWT 발급 (표준앱 핵심: empNo claim 포함)
+    // 만료 정책은 AuthenticationTokenUtils의 expires 설정값 그대로 사용
+    Map<String, Object> claims = Map.of(
+        "empNo", empNo,
+        "userId", userId == null ? "" : userId
     );
 
-    // 4) 쿠키 저장
-    ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, myJwt)
-        .httpOnly(true)
-        .secure(false)
+    String accessJwt = JwtUtils.createToken(
+        claims,
+        JwtUtils.getPrivateKey(),
+        AuthenticationTokenUtils.ACCESS_TOKEN_EXPIRES_IN * 1000L
+    );
+
+    String refreshJwt = JwtUtils.createToken(
+        claims,
+        JwtUtils.getPrivateKey(),
+        AuthenticationTokenUtils.REFRESH_TOKEN_EXPIRES_IN * 1000L
+    );
+
+    // 4) ✅ 쿠키 저장 (표준앱 규칙)
+    boolean secure = isSecureRequest(request);
+
+    ResponseCookie accessCookie = ResponseCookie.from(AuthenticationTokenUtils.ACCESS_TOKEN_COOKIE_NAME, accessJwt)
+        .httpOnly(false)                 // ✅ access는 프론트가 읽을 수도 있는 정책
+        .secure(secure)
         .sameSite("Lax")
         .path("/")
-        .maxAge(60 * 60 * 2)
+        .maxAge(AuthenticationTokenUtils.ACCESS_TOKEN_EXPIRES_IN)
         .build();
 
-    ResponseCookie legacyCleanup = ResponseCookie.from(ACCESS_TOKEN_COOKIE_LEGACY, "")
-        .httpOnly(true)
-        .secure(false)
+    ResponseCookie refreshCookie = ResponseCookie.from(AuthenticationTokenUtils.REFRESH_TOKEN_COOKIE_NAME, refreshJwt)
+        .httpOnly(true)                  // ✅ refresh는 무조건 true
+        .secure(secure)
         .sameSite("Lax")
         .path("/")
-        .maxAge(0)
+        .maxAge(AuthenticationTokenUtils.REFRESH_TOKEN_EXPIRES_IN)
         .build();
 
-    // ✅ 프론트 리다이렉트 (형님 원래 로직 유지)
-    String reqHost = request.getHeader("Host");
-    if (reqHost == null || reqHost.isBlank()) reqHost = request.getServerName();
-    reqHost = reqHost.replaceAll(":\\d+$", "");
-
-    String redirectUrl = "http://" + reqHost + ":3000/main";
+    // 5) ✅ 리다이렉트 (표준앱처럼: 세션 requestURI 우선)
+    String redirectUrl = buildRedirectUrl(request);
 
     HttpHeaders out = new HttpHeaders();
-    out.add(HttpHeaders.SET_COOKIE, cookie.toString());
-    out.add(HttpHeaders.SET_COOKIE, legacyCleanup.toString());
+    out.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+    out.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
     out.add(HttpHeaders.LOCATION, redirectUrl);
+
     return new ResponseEntity<>(out, HttpStatus.FOUND);
+  }
+
+  /**
+   * ✅ 표준앱식 refresh 엔드포인트
+   * - refresh 쿠키 검증되면 access 재발급 + access 쿠키만 재세팅
+   */
+  @PostMapping("/refresh")
+  public ResponseEntity<Void> refresh(HttpServletRequest request) {
+
+    String refreshToken = AuthenticationTokenUtils.getRefreshToken(request);
+    if (StringUtils.isBlank(refreshToken)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    if (!AuthenticationTokenUtils.validationRefreshToken(refreshToken)) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    // refresh 토큰의 claim 기반으로 access 재발급
+    @SuppressWarnings("unchecked")
+    Map<String, Object> claims = JwtUtils.parseToken(refreshToken, JwtUtils.getPublicKey());
+    if (claims == null || StringUtils.isBlank(String.valueOf(claims.get("empNo")))) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    String newAccess = JwtUtils.createToken(
+        claims,
+        JwtUtils.getPrivateKey(),
+        AuthenticationTokenUtils.ACCESS_TOKEN_EXPIRES_IN * 1000L
+    );
+
+    boolean secure = isSecureRequest(request);
+
+    ResponseCookie accessCookie = ResponseCookie.from(AuthenticationTokenUtils.ACCESS_TOKEN_COOKIE_NAME, newAccess)
+        .httpOnly(false)
+        .secure(secure)
+        .sameSite("Lax")
+        .path("/")
+        .maxAge(AuthenticationTokenUtils.ACCESS_TOKEN_EXPIRES_IN)
+        .build();
+
+    HttpHeaders out = new HttpHeaders();
+    out.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+    return new ResponseEntity<>(out, HttpStatus.NO_CONTENT);
+  }
+
+  // -------------------------
+  // helpers
+  // -------------------------
+
+  private boolean isSecureRequest(HttpServletRequest request) {
+    // dev는 http일 수 있으니 강제 false로 박고 싶으면 여기서 고정해도 됨
+    // return false;
+    return request.isSecure();
+  }
+
+  private String buildRedirectUrl(HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+
+    String requestURI = null;
+    if (session != null) {
+      Object v = session.getAttribute("requestURI");
+      if (v != null) requestURI = String.valueOf(v);
+      session.removeAttribute("requestURI");
+    }
+
+    // 기본 이동 경로
+    if (StringUtils.isBlank(requestURI)) requestURI = "/main";
+
+    // 프론트가 리액트(3000)면 그대로 유지
+    String host = request.getHeader("Host");
+    if (StringUtils.isBlank(host)) host = request.getServerName();
+    host = host.replaceAll(":\\d+$", "");
+
+    // 운영/개발 분기 필요하면 여기서 조절
+    // 개발: http://host:3000 + requestURI
+    // 운영: https://host + requestURI
+    return "http://" + host + ":3000" + requestURI;
   }
 
   @SuppressWarnings("unchecked")
