@@ -3,6 +3,7 @@ package kr.co.koreazinc.app.controller.together;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,6 +37,10 @@ public class TogetherBoardController {
 	
 	private final TogetherBoardService togetherBoardService;
 	
+	// 사용자별 진행 상태 관리
+	private final ConcurrentHashMap<String, Long> postLock = new ConcurrentHashMap<>();
+	private static final long DUPLICATE_PREVENTION_TIME = 2000L; // 2초간 중복 방지
+	
 	@Operation(summary = "투게더 게시글 등록")
     @PostMapping("/posts/create")
 	public Map<String, Object> insertTogetherPost(
@@ -43,13 +48,22 @@ public class TogetherBoardController {
 			@RequestPart(value = "files", required = false) List<MultipartFile> files,
 			@AuthenticationPrincipal UserPrincipal principal) {
 		Map<String, Object> result = new HashMap<>();
-		 
-		if (principal != null) {
-			postDto.setCreateUser(principal.getEmpNo());
-			postDto.setUpdateUser(principal.getEmpNo());
-		}
+		String empNo = (principal != null) ? principal.getEmpNo() : null;
+		long now = System.currentTimeMillis();
 		
-		try {
+		// 중복 체크 : 2초 이내에 동일 사번의 요청이 있는지 확인
+    	if (postLock.containsKey(empNo) && (now - postLock.get(empNo) < DUPLICATE_PREVENTION_TIME)) {
+    		result.put("success", false);
+    		result.put("message", "이미 게시글을 등록 중입니다. 잠시만 기다려주세요.");
+    		return result;
+    	}
+    	
+    	try {
+    		postLock.put(empNo, now);
+    		
+    		postDto.setCreateUser(empNo);
+			postDto.setUpdateUser(empNo);
+			
 			Long boardId = togetherBoardService.insertTogetherPost(postDto, files);
 			
 			result.put("success", true);
