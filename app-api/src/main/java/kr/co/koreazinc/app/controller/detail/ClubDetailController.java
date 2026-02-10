@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,6 +52,10 @@ public class ClubDetailController {
     private final ClubDetailService clubDetailService;
     private final CommonDocService commonDocService;
     private final CurrentUserService currentUserService;
+    
+    // 사용자별 진행 상태 관리
+    private final ConcurrentHashMap<String, Long> postLock = new ConcurrentHashMap<>();
+    private static final long DUPLICATE_PREVENTION_TIME = 2000L; // 2초간 중복 방지
     
     @Operation(summary = "로그인 사번")
     @ModelAttribute("loginEmpNo")
@@ -150,18 +156,40 @@ public class ClubDetailController {
 			@RequestPart(value = "files", required = false) List<MultipartFile> files,
 			@ModelAttribute("loginEmpNo") String empNo) {
     	Map<String, Object> result = new HashMap<>();
+    	long now = System.currentTimeMillis();
     	
-    	dto.setClubId(clubId);
-    	dto.setUserEmpNo(empNo);
-    	dto.setCreateUser(empNo);
+    	// 중복 체크 : 2초 이내에 동일 사번의 요청이 있는지 확인
+    	if (postLock.containsKey(empNo) && (now - postLock.get(empNo) < DUPLICATE_PREVENTION_TIME)) {
+    		result.put("success", false);
+    		result.put("message", "이미 게시글을 등록 중입니다. 잠시만 기다려주세요.");
+    		return result;
+    	}
     	
-    	boolean isSuccess = clubDetailService.insertClubPost(dto, files, empNo);
-    	result.put("success", isSuccess);
-    	
-    	if (isSuccess) {
-            result.put("message", "게시글이 성공적으로 등록되었습니다.");
-    	} else {
-            result.put("message", "게시글 등록 중 오류가 발생했습니다.");
+    	try {
+    		postLock.put(empNo, now);
+    		
+    		dto.setClubId(clubId);
+        	dto.setUserEmpNo(empNo);
+        	dto.setCreateUser(empNo);
+        	
+        	boolean isSuccess = clubDetailService.insertClubPost(dto, files, empNo);
+        	result.put("success", isSuccess);
+        	
+        	if (isSuccess) {
+        		result.put("success", true);
+                result.put("message", "게시글이 성공적으로 등록되었습니다.");
+        	} else {
+        		result.put("success", false);
+                result.put("message", "게시글 등록 중 오류가 발생했습니다.");
+        	}
+    	} catch (RuntimeException re) {
+    		log.error("게시글 등록 비즈니스 로직 에러: {}", re.getMessage());
+    		result.put("success", false);
+            result.put("message", re.getMessage());
+    	} catch (Exception e) {
+    		log.error("게시글 등록 중 서버 시스템 에러 : ", e);
+    		result.put("success", false);
+            result.put("message", "서버 내부 오류가 발생했습니다.");
     	}
     	return result;
     }
@@ -395,7 +423,6 @@ public class ClubDetailController {
         result.put("USER_ID", currentUserService.userIdOrThrow());
         result.put("CMP_ID", "C300200116");
         result.put("WORK_ID", "AW89321137883776007659");
-        System.out.println("xmlData > " + xmlData);
         result.put("XMLDATA", xmlData);
         
         return ResponseEntity.ok(result);
