@@ -14,4 +14,6 @@ public class ClubJoinRequestDto {
     private String deptNm;
     private String positionCd;
     private String companyNm;
+    private String applyReason;
+    private String requestDate;
 }

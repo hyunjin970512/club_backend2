@@ -31,6 +31,9 @@ public class ClubJoinRequestRepository extends AbstractJpaRepository<ClubJoinReq
 	    return queryFactory
 	        .select(Projections.bean(type,
 	            clubJoinRequest.requestUser.as("requestEmpNo"),
+	            clubJoinRequest.applyReason,
+	            Expressions.stringTemplate("TO_CHAR({0}, {1})", 
+	            		clubJoinRequest.requestDate, "YYYY-MM-DD").as("requestDate"),
 	            coEmplBas.nameKo.as("requestNm"),
 	            coEmplBas.deptCd.as("deptNm"),
 	            coEmplBas.positionCd.as("positionCd"),
