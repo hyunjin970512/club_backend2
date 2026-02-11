@@ -61,7 +61,8 @@ public class SubsidyRuleService {
     public Long createRule(SubsidyRuleDto.CreateRequest req, String empNo) {
 
         // 1) 현재 적용중 규정 있으면 use_yn='N'
-        commandRepo.deactivateCurrentRules(empNo);
+//        commandRepo.deactivateCurrentRules(empNo);
+        commandRepo.deactivateCurrentRules(req.getApplyStartDt(), req.getApplyEndDt(), empNo);
 
         // 2) BAS 생성
         Long applyId = commandRepo.insertBas(req.getApplyStartDt(), req.getApplyEndDt(), empNo);

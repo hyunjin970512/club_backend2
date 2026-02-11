@@ -34,7 +34,8 @@ public class SubsidyRuleCommandRepository
      * - 조건: use_yn='Y' AND today between start~end (end null 허용)
      */
     @Transactional
-    public long deactivateCurrentRules(String empNo) {
+//    public long deactivateCurrentRules(String empNo) {
+    public long deactivateCurrentRules(LocalDate applyStartDt, LocalDate applyEndDt, String empNo) {
 
         QClubApplyFeeRuleBas bas = QClubApplyFeeRuleBas.clubApplyFeeRuleBas;
 
@@ -50,8 +51,8 @@ public class SubsidyRuleCommandRepository
                 .set(bas.updateDate, now)
                 .where(
                         bas.useYn.eq("Y"),
-                        bas.applyStartDt.loe(today),
-                        bas.applyEndDt.isNull().or(bas.applyEndDt.goe(today))
+                        bas.applyStartDt.eq(applyStartDt),
+                        bas.applyEndDt.isNull().or(bas.applyEndDt.eq(applyEndDt))
                 )
                 .execute();
     }
