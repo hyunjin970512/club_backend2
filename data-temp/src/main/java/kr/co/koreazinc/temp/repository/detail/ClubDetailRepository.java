@@ -14,8 +14,10 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.ParameterMode;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.data.support.Query;
+import kr.co.koreazinc.data.support.Query.Procedure;
 import kr.co.koreazinc.temp.model.entity.detail.ClubDetail;
 import kr.co.koreazinc.temp.model.entity.detail.ClubFeeInfo;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
@@ -148,7 +150,45 @@ public class ClubDetailRepository extends AbstractJpaRepository<ClubDetail, Inte
 		                clubJoinRequest.clubId.eq(clubId),
 		                clubJoinRequest.requestUser.eq(empNo)
 		            )
-		            .fetchOne()
+		            .orderBy(clubJoinRequest.requestId.desc())
+		            .fetchFirst()
 		    );
+  }
+  
+  /**
+   * 동호회 GW 상신 프로시저 호출
+   */
+  public class ClubGwAfterProcedure extends Procedure<Void> {
+	  
+	  public ClubGwAfterProcedure() {
+		  // PostgreSQL 함수 호출
+		  super(entityManager.createStoredProcedureQuery("public.sp_club_gw_after"));
+		  
+		  // 파라미터 등록
+		  storedProcedure.registerParameter("p_club_id", Integer.class, ParameterMode.IN);
+		  storedProcedure.registerStoredProcedureParameter("p_request_id", Integer.class, ParameterMode.IN);
+          storedProcedure.registerStoredProcedureParameter("p_gwdocno", String.class, ParameterMode.IN);
+          storedProcedure.registerStoredProcedureParameter("p_status", String.class, ParameterMode.IN);
+          storedProcedure.registerStoredProcedureParameter("p_user_emp_no", String.class, ParameterMode.IN);
+	  }
+	  
+	  public ClubGwAfterProcedure setParams(int clubId, int requestId, String gwDocNo, String status, String userId) {
+		  storedProcedure.setParameter("p_club_id", clubId);
+          storedProcedure.setParameter("p_request_id", requestId);
+          storedProcedure.setParameter("p_gwdocno", gwDocNo);
+          storedProcedure.setParameter("p_status", status);
+          storedProcedure.setParameter("p_user_emp_no", userId);
+          return this;
+	  }
+  }
+  
+  /**
+   * Service에서 호출할 실행 메서드
+   */
+  @Transactional
+  public void executeClubGwAfter(Integer clubId, Integer requestId, String gwDocNo, String status, String userId) {
+	  new ClubGwAfterProcedure()
+	  	.setParams(clubId, requestId, gwDocNo, status, userId)
+	  	.execute();
   }
 }

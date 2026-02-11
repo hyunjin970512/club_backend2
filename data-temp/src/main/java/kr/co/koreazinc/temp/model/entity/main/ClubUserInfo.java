@@ -66,4 +66,14 @@ public class ClubUserInfo {
         this.updateUser = createUser;
         this.updateDate = LocalDateTime.now();
     }
+    
+    /**
+     * 재가입 시 상태 및 수정 정보 업데이트
+     */
+    public void renewMemberStatus(String status, String updateUser) {
+        this.status = status;
+        this.joinDate = LocalDate.now();
+        this.updateUser = updateUser;
+        this.updateDate = LocalDateTime.now();
+    }
 }

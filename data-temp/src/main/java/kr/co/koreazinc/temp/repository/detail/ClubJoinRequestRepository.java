@@ -16,6 +16,7 @@ import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.temp.model.entity.main.ClubJoinRequest;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
+import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 
 @Repository
 @Transactional(readOnly = true)
@@ -71,14 +72,31 @@ public class ClubJoinRequestRepository extends AbstractJpaRepository<ClubJoinReq
      */
 	@Transactional
 	public void insertClubMember(Long clubId, String empNo, String createUser) {
-		ClubUserInfo newUser = ClubUserInfo.builder()
-				.clubId(clubId)
-				.empNo(empNo)
-				.userRoleCd("10")
-				.status("10")
-				.createUser(createUser)
-				.build();
+		// 기존 멤버 존재여부 조회
+		Optional<ClubUserInfo> existMember = Optional.ofNullable(
+				queryFactory
+					.selectFrom(QClubUserInfo.clubUserInfo)
+					.where(
+							QClubUserInfo.clubUserInfo.clubId.eq(clubId),
+							QClubUserInfo.clubUserInfo.empNo.eq(empNo)
+					)
+					.fetchOne()
+		);
 		
-		entityManager.persist(newUser);
+		if (existMember.isPresent()) {
+			ClubUserInfo member = existMember.get();
+			member.renewMemberStatus("10", createUser);
+		} else {
+			// 없으면 신규 등록
+			ClubUserInfo newUser = ClubUserInfo.builder()
+					.clubId(clubId)
+					.empNo(empNo)
+					.userRoleCd("10")
+					.status("10")
+					.createUser(createUser)
+					.build();
+			
+			entityManager.persist(newUser);
+		}
 	}
 }
