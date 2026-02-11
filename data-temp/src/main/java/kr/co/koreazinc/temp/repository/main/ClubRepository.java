@@ -17,6 +17,7 @@ import kr.co.koreazinc.temp.model.entity.account.QCoEmplBas;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
 import kr.co.koreazinc.temp.model.entity.main.QClubCreateRequest;
 import kr.co.koreazinc.temp.model.entity.main.QClubInfo;
+import kr.co.koreazinc.temp.model.entity.main.QClubJoinRequest;
 import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 
 @Repository
@@ -140,6 +141,37 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
                 .where(
                     cui.clubId.eq(clubId),
                     cui.empNo.in(memberEmpNos)
+                )
+                .execute();
+    }
+    
+    /**
+     * 동호회 탈퇴
+     */
+    @Transactional
+    public long quitClub(Integer clubId, String empNo) {
+    	QClubJoinRequest cjr = QClubJoinRequest.clubJoinRequest;
+    	QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+    	
+    	// 가입 요청 테이블 상태 변경
+    	queryFactory.update(cjr)
+    		.set(cjr.status, "40")
+    		.set(cjr.updateUser, empNo)
+    		.set(cjr.updateDate, LocalDateTime.now())
+    		.where(
+    				cjr.clubId.eq(clubId.longValue()),
+    				cjr.requestUser.eq(empNo)
+    		)
+    		.execute();
+    	
+    	// 멤버 정보 테이블 상태 변경
+    	return queryFactory.update(cui)
+                .set(cui.status, "20")
+                .set(cui.updateUser, empNo)
+                .set(cui.updateDate, LocalDateTime.now())
+                .where(
+                    cui.clubId.eq(clubId.longValue()),
+                    cui.empNo.eq(empNo)
                 )
                 .execute();
     }

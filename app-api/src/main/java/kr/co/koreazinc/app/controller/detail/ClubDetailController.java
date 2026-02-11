@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -376,6 +377,19 @@ public class ClubDetailController {
         }
     }
     
+    @Operation(summary = "탈퇴하기")
+    @PostMapping("/{clubId}/quit")
+    @ResponseBody
+    public Map<String, Object> quitClubMember(@PathVariable("clubId") Integer clubId, @ModelAttribute("loginEmpNo") String empNo) {
+        boolean isSuccess = clubDetailService.quitClub(clubId, empNo);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", isSuccess);
+        response.put("message", isSuccess ? "탈퇴 처리가 완료되었습니다." : "탈퇴 처리에 실패했습니다.");
+        
+        return response;
+    }
+    
     @Operation(summary = "동호회 권한 정보 조회")
     @GetMapping("/{clubId}/auth")
     public ResponseEntity<ClubAuthDto> getClubAuth(
@@ -426,5 +440,22 @@ public class ClubDetailController {
         result.put("XMLDATA", xmlData);
         
         return ResponseEntity.ok(result);
+    }
+    
+    @Operation(summary = "GW 결재 상태 연동 (프로시저 호출)")
+    @GetMapping("/updateStatus")
+    public ResponseEntity<String> updateGwStatus(
+    		@RequestParam("clubId") int clubId, 
+    		@RequestParam("requestId") int requestId,
+    		@RequestParam("gwDocNo") String gwDocNo, 
+    		@RequestParam("status") String status,
+    		@RequestParam("userId") String userId) {
+    	try {
+    		clubDetailService.callSpClubGwAfter(clubId, requestId, gwDocNo, status, userId);
+    		return ResponseEntity.ok("SUCCESS");
+    	} catch (Exception e) {
+    		log.error("GW API 처리 중 오류 발생: {}", e.getMessage());
+            return ResponseEntity.status(500).body("ERROR: " + e.getMessage());
+    	}
     }
 }

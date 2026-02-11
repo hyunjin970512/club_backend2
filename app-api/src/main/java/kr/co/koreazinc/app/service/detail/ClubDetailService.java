@@ -467,6 +467,15 @@ public class ClubDetailService {
 	}
 	
 	/**
+     * 동호회 탈퇴
+     */
+	@Transactional
+	public boolean quitClub(Integer clubId, String empNo) {
+		long updatedCount = clubRepository.quitClub(clubId, empNo);
+        return updatedCount > 0;
+	}
+	
+	/**
      * 동호회 권한 정보 조회
      */
 	@Transactional
@@ -553,5 +562,18 @@ public class ClubDetailService {
 	    xml.append("</Document>");
 
 	    return xml.toString().replaceAll("&", "&amp;").replaceAll("%", "&#37;");
+	}
+	
+	/**
+     * 동호회 GW 결재 상태 연동
+     */
+	@Transactional
+	public void callSpClubGwAfter(int cludId, int requestId, String gwDocNo, String status, String userId) {
+		try {
+			clubDetailRepository.executeClubGwAfter(cludId, requestId, gwDocNo, status, userId);
+		} catch (Exception e) {
+			log.error("프로시저 호출 중 오류 발생: {}", e.getMessage());
+            throw e;
+		}
 	}
 }
