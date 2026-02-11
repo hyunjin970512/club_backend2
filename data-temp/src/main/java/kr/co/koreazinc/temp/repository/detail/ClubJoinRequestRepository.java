@@ -74,7 +74,7 @@ public class ClubJoinRequestRepository extends AbstractJpaRepository<ClubJoinReq
 		ClubUserInfo newUser = ClubUserInfo.builder()
 				.clubId(clubId)
 				.empNo(empNo)
-				.userRoleCd("MB")
+				.userRoleCd("10")
 				.status("10")
 				.createUser(createUser)
 				.build();
