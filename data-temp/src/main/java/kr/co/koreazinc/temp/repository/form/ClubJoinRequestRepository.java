@@ -25,22 +25,31 @@ public class ClubJoinRequestRepository extends AbstractJpaRepository<ClubJoinReq
     public class SelectQuery<DTO> extends Query.Select<DTO> {
         public SelectQuery(JPAQuery<DTO> query) { super(query); }
     }
-    
-    public Long findRequestIdMineByClubId(String empNo, Long clubId) {
+
+    /**
+     * ✅ 내 "활성" 신청/가입(10=신청, 20=승인) request_id 조회
+     * - 신청중이거나 이미 승인(가입중)인 상태면 존재
+     * - 반려(30), 취소(40)는 제외 → 재신청 허용
+     */
+    public Long findActiveRequestIdMineByClubId(String empNo, Long clubId) {
         QClubJoinRequest cjr = QClubJoinRequest.clubJoinRequest;
+
         return queryFactory
             .select(cjr.requestId)
             .from(cjr)
             .where(
                 cjr.requestUser.eq(empNo),
                 cjr.clubId.eq(clubId),
-                cjr.status.eq("10") // 신청
+                cjr.status.in("10", "20")
             )
             .fetchFirst();
     }
 
-    /** ✅ (clubId, requestUser) 존재 여부 체크 (중복 신청 방지) */
-    public long countByClubIdAndRequestUser(Long clubId, String empNo) {
+    /**
+     * ✅ 활성 상태(신청/승인)만 중복 체크
+     * - 재가입(반려/취소 후 재신청)은 허용되어야 하므로 전체 이력 카운트 금지
+     */
+    public long countActiveByClubIdAndRequestUser(Long clubId, String empNo) {
         QClubJoinRequest cjr = QClubJoinRequest.clubJoinRequest;
 
         Long cnt = queryFactory
@@ -48,14 +57,18 @@ public class ClubJoinRequestRepository extends AbstractJpaRepository<ClubJoinReq
             .from(cjr)
             .where(
                 cjr.clubId.eq(clubId),
-                cjr.requestUser.eq(empNo)
+                cjr.requestUser.eq(empNo),
+                cjr.status.in("10", "20")
             )
             .fetchOne();
 
         return cnt == null ? 0L : cnt;
     }
 
-    /** ✅ requestId로 단건 조회 + 본인 것만 */
+    /**
+     * ✅ requestId로 단건 조회 + 본인 것만
+     * (상태 제한 없음: 신청/승인/반려/취소 전부 조회 가능)
+     */
     public ClubJoinRequest findOneMine(Long requestId, String empNo) {
         QClubJoinRequest cjr = QClubJoinRequest.clubJoinRequest;
 

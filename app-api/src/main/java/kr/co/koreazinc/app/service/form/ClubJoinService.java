@@ -49,7 +49,7 @@ public class ClubJoinService {
         }
 
         // 2) 신청중 체크 (club_join_request)
-        Long requestId = clubJoinRequestRepository.findRequestIdMineByClubId(empNo, clubId);
+        Long requestId = clubJoinRequestRepository.findActiveRequestIdMineByClubId(empNo, clubId);
         if (requestId != null) {
             res.setRequested(true);
             res.setRequestId(requestId);
@@ -97,8 +97,8 @@ public class ClubJoinService {
         if (reason == null || reason.trim().isEmpty()) throw new IllegalArgumentException("applyReason required");
 
         // 선검증(유니크 제약이 최종 방어)
-        long cnt = clubJoinRequestRepository.countByClubIdAndRequestUser(clubId, empNo);
-        if (cnt > 0) throw new IllegalStateException("이미 가입 신청한 동호회입니다.");
+        long cnt = clubJoinRequestRepository.countActiveByClubIdAndRequestUser(clubId, empNo);
+        if (cnt > 0) throw new IllegalStateException("이미 가입 신청/처리 중인 동호회입니다.");
 
         ClubJoinRequest entity = new ClubJoinRequest();
         entity.setClubId(clubId);
@@ -112,7 +112,7 @@ public class ClubJoinService {
         try {
             clubJoinRequestRepository.save(entity);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalStateException("이미 가입 신청한 동호회입니다.");
+            throw new IllegalStateException("이미 가입 신청/처리 중인 동호회입니다.");
         }
         
         Long requestId = entity.getRequestId();
