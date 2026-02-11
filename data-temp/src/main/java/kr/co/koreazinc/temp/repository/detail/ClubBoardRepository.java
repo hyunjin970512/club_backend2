@@ -177,10 +177,9 @@ public class ClubBoardRepository extends AbstractJpaRepository<ClubBoard, Intege
 	            .select(Projections.bean(type,
 	                    commonDoc.docNo,
 	                    commonDoc.docFileNm,    // DTO의 docFileNm 필드와 매핑
+	                    commonDoc.docFileSize.as("fileSize"), // 파일 크기
 	                    commonDoc.createUser,   // 엔티티에 있는 필드들을 추가로 매핑 가능
 	                    commonDoc.createDate
-	                    // 만약 DTO의 originNm 필드에 파일명을 넣고 싶다면 아래처럼 별칭 사용
-	                    // commonDoc.docFileNm.as("originNm") 
 	            ))
 	            .from(commonDoc)
 	            .join(commonMappingDoc).on(commonDoc.docNo.eq(commonMappingDoc.docNo))

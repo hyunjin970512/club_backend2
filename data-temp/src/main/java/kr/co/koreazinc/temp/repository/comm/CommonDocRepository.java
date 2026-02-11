@@ -32,6 +32,7 @@ public class CommonDocRepository extends AbstractJpaRepository<CommonDoc, Long> 
             this.addField("createDate", commonDoc.createDate);
             this.addField("filePath", commonDoc.filePath);
             this.addField("saveFileNm", commonDoc.saveFileNm); 
+            this.addField("docFileSize", commonDoc.docFileSize);
             this.addField("createUser", commonDoc.createUser);
             this.addField("createDate", commonDoc.createDate);
 		}

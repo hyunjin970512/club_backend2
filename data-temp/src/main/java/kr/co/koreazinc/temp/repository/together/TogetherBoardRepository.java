@@ -53,6 +53,7 @@ public class TogetherBoardRepository extends AbstractJpaRepository<TogetherBoard
 	            .select(Projections.bean(type,
 	                    commonDoc.docNo,
 	                    commonDoc.docFileNm,
+	                    commonDoc.docFileSize.as("fileSize"), // 파일 크기
 	                    commonDoc.createUser,
 	                    commonDoc.createDate
 	            ))

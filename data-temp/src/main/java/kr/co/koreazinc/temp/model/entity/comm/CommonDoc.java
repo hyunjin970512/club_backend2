@@ -41,6 +41,9 @@ public class CommonDoc {
 	
 	@Column(name = "save_file_nm")
     private String saveFileNm;
+	
+	@Column(name = "doc_file_size")
+    private Long docFileSize;
     
     @Column(name = "create_user")
     private String createUser;

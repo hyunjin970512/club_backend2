@@ -42,9 +42,17 @@ public class CommonDocService {
 		    throw new IOException("파일 서버 업로드에 실패하였습니다. (응답 없음)");
 		}
 
-		CommonDoc entity = CommonDoc.builder().jobSeCode(jobSeCode).docFileNm(files.getOriginalFilename())
-				.filePath(result.getPath()).saveFileNm(result.getName()).deleteYn("N").createUser(empNo)
-				.createDate(LocalDateTime.now()).updateUser(empNo).updateDate(LocalDateTime.now()).build();
+		CommonDoc entity = CommonDoc.builder()
+				.jobSeCode(jobSeCode)
+				.docFileNm(files.getOriginalFilename())
+				.filePath(result.getPath())
+				.saveFileNm(result.getName())
+				.docFileSize(files.getSize())
+				.deleteYn("N")
+				.createUser(empNo)
+				.createDate(LocalDateTime.now())
+				.updateUser(empNo)
+				.updateDate(LocalDateTime.now()).build();
 
 		CommonDoc saved = commonDocRepository.insert(entity);
 		return saved.getDocNo();
