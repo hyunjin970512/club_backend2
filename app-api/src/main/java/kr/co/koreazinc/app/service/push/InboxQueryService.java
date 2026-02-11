@@ -39,11 +39,6 @@ public class InboxQueryService {
 	public void markRead(String empNo, Long inboxId) {
 
 	    long updated = inboxRepo.markAsRead(inboxId, empNo);
-
-	    if (updated == 0) {
-	        // 이미 읽었거나, 없는 알림이거나, 남의 알림
-	        throw new IllegalArgumentException("Inbox not found or not allowed");
-	    }
 	}
 	
 	/**

@@ -13,6 +13,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import kr.co.koreazinc.app.service.auth.EmpUpsertService;
 import kr.co.koreazinc.spring.security.model.ResponseToken;
 import kr.co.koreazinc.spring.security.utility.AuthenticationTokenUtils;
 import kr.co.koreazinc.spring.security.property.OAuth2Property;
@@ -28,6 +29,9 @@ public class OAuthCallbackController {
 
   private final RestTemplate restTemplate;
   private final OAuth2Property oauth2;
+  
+  // SSO 로그인 후 DB 데이터 저장 및 업데이트
+  private final EmpUpsertService empUpsertService;
 
   /**
    * ✅ 표준앱 방식 (쿠키명/만료는 AuthenticationTokenUtils 기준)
@@ -80,6 +84,9 @@ public class OAuthCallbackController {
         userinfoUrl, HttpMethod.GET, new HttpEntity<>(uh), Map.class
     ).getBody();
 
+    
+    empUpsertService.upsertFromSsoMap(me);
+    
     String userId = toNonNullString(me == null ? null : me.get("userId"));
     String empNo = extractEmpNoFromJob(me);
 
