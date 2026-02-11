@@ -4,6 +4,7 @@ import static kr.co.koreazinc.temp.model.entity.main.QClubJoinRequest.clubJoinRe
 import static kr.co.koreazinc.temp.model.entity.detail.view.QVClubDetail.vClubDetail;
 import static kr.co.koreazinc.temp.model.entity.detail.QClubFeeInfo.clubFeeInfo;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.data.support.Query;
 import kr.co.koreazinc.temp.model.entity.detail.ClubDetail;
+import kr.co.koreazinc.temp.model.entity.detail.ClubFeeInfo;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
 import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 
@@ -75,33 +77,51 @@ public class ClubDetailRepository extends AbstractJpaRepository<ClubDetail, Inte
     * 동호회 회비 조회하기
     */
    public <T> List<T> selectClubFeeInfoList(Class<T> type, Integer clubId) {
-	   return queryFactory
+	   // 최근 등록 3건 조회
+	   List<T> result = queryFactory
 	            .select(Projections.bean(type,
-	            		clubFeeInfo.feeId.intValue().as("feeId"),
-	            		clubFeeInfo.clubId.intValue().as("clubId"),
+	                    clubFeeInfo.feeId.intValue().as("feeId"),
+	                    clubFeeInfo.clubId.intValue().as("clubId"),
 	                    clubFeeInfo.positionCd,
 	                    Expressions.stringTemplate("fn_get_common_code({0}, {1})", 
 	                                             "POSITION_CD", clubFeeInfo.positionCd).as("positionNm"),
 	                    clubFeeInfo.amount.as("positionAmt")
 	            ))
 	            .from(clubFeeInfo)
-	            .where(clubFeeInfo.clubId.eq((int) clubId.longValue()))
-	            .orderBy(clubFeeInfo.positionCd.desc())
+	            .where(clubFeeInfo.clubId.eq(clubId))
+	            .orderBy(clubFeeInfo.feeId.desc())
+	            .limit(3)
 	            .fetch();
+	   
+	   // PositionCd 기준으로 정렬
+	   result.sort((o1, o2) -> {
+	        try {
+	            String pos1 = (String) o1.getClass().getMethod("getPositionCd").invoke(o1);
+	            String pos2 = (String) o2.getClass().getMethod("getPositionCd").invoke(o2);
+	            return pos2.compareTo(pos1); // 내림차순
+	        } catch (Exception e) {
+	            return 0;
+	        }
+	    });
+	   
+	   return result;
    }
    
    /**
     * 동호회 회비 수정하기
     */
-  public long updateClubFeeInfo(Integer clubId, String positionCd, Integer amount, String empNo) { 
-	   return queryFactory
-               .update(clubFeeInfo)
-               .set(clubFeeInfo.amount, amount)
-               .set(clubFeeInfo.updateUser, empNo)
-               .set(clubFeeInfo.updateDate, java.time.LocalDateTime.now())
-               .where(clubFeeInfo.clubId.eq((int) clubId.longValue())
-                       .and(clubFeeInfo.positionCd.eq(positionCd)))
-               .execute();
+  public void saveClubFeeInfo(Integer clubId, String positionCd, Integer amount, String empNo) {
+	  ClubFeeInfo fee = ClubFeeInfo.builder()
+			  .clubId(clubId)
+			  .positionCd(positionCd)
+			  .amount(amount)
+			  .createUser(empNo)
+			  .createDate(LocalDateTime.now())
+			  .updateUser(empNo)
+			  .updateDate(LocalDateTime.now())
+			  .build();
+	  
+	  entityManager.persist(fee);
   }
   
   /**

@@ -150,7 +150,7 @@ public class ClubDetailService {
 	@Transactional
 	public void updateClubFeeList(Integer clubId, List<ClubFeeInfoDto.Get> feeList, String empNo) {
 		for (ClubFeeInfoDto.Get dto : feeList) {
-			clubDetailRepository.updateClubFeeInfo(clubId, dto.getPositionCd(), dto.getPositionAmt(), empNo);
+			clubDetailRepository.saveClubFeeInfo(clubId, dto.getPositionCd(), dto.getPositionAmt(), empNo);
 		}
 	}
 	
