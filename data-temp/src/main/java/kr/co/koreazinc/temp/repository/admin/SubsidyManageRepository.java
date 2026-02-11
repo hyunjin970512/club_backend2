@@ -20,6 +20,7 @@ import kr.co.koreazinc.temp.model.entity.admin.ClubApplyFeeManage;
 import kr.co.koreazinc.temp.model.entity.admin.QClubApplyFeeManage;
 import kr.co.koreazinc.temp.model.entity.main.QClubApplyFeeRuleBas;
 import kr.co.koreazinc.temp.model.entity.main.QClubApplyFeeRuleDetail;
+import kr.co.koreazinc.temp.model.entity.main.QClubGwInfo;
 import kr.co.koreazinc.temp.model.entity.main.QClubInfo;
 import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 
@@ -86,40 +87,48 @@ public class SubsidyManageRepository
 
   /** ✅ 계산 모드용: 클럽별 회원수 집계 + 동호회장명 */
   public <T> SelectQuery<T> selectClubMemberAgg(Class<T> type) {
-    QClubInfo ci = QClubInfo.clubInfo;
-    QClubUserInfo cui = QClubUserInfo.clubUserInfo;
-    QCoEmplBas ceb = QCoEmplBas.coEmplBas;
+	  QClubInfo ci = QClubInfo.clubInfo;
+	  QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+	  QCoEmplBas ceb = QCoEmplBas.coEmplBas;
+	  QClubGwInfo gw = QClubGwInfo.clubGwInfo; // ✅ 추가
 
-    var leaderExpr = Expressions.stringTemplate(
-        "coalesce({0} || ' ' || {1}, '미상')",
-        ceb.nameKo, ceb.positionCd
-    );
+	  var leaderExpr = Expressions.stringTemplate(
+	      "coalesce({0} || ' ' || {1}, '미상')",
+	      ceb.nameKo, ceb.positionCd
+	  );
 
-    var memberCntExpr = cui.clubUserId.count().intValue();
+	  var memberCntExpr = cui.clubUserId.count().intValue();
 
-    return new SelectQuery<>(
-        queryFactory
-            .select(Projections.constructor(
-                type,
-                ci.clubId,
-                ci.clubNm,
-                leaderExpr,
-                memberCntExpr
-            ))
-            .from(ci)
-            .leftJoin(cui).on(
-                ci.clubId.eq(cui.clubId)
-                    .and(cui.status.eq("10"))
-            )
-            .leftJoin(ceb).on(
-                ceb.empNo.eq(ci.clubMasterId)
-                    .and(ceb.deleteAt.ne("Y"))
-            )
-            .where(ci.status.eq("30"))
-            .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
-            .orderBy(ci.clubNm.asc())
-    );
-  }
+	  var gwApprovedExists =
+	      JPAExpressions.selectOne()
+	          .from(gw)
+	          .where(
+	              gw.clubId.eq(ci.clubId),
+	              gw.status.eq("A")
+	          )
+	          .exists();
+
+	  return new SelectQuery<>(
+	      queryFactory
+	          .select(Projections.constructor(
+	              type,
+	              ci.clubId,
+	              ci.clubNm,
+	              leaderExpr,
+	              memberCntExpr
+	          ))
+	          .from(ci)
+	          .leftJoin(cui).on(ci.clubId.eq(cui.clubId).and(cui.status.eq("10")))
+	          .leftJoin(ceb).on(ceb.empNo.eq(ci.clubMasterId).and(ceb.deleteAt.ne("Y")))
+	          .where(
+	              ci.status.eq("30"),
+	              gwApprovedExists // ✅ 여기 추가
+	          )
+	          .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
+	          .orderBy(ci.clubNm.asc())
+	  );
+	}
+
 
   // ============================================================
   // ✅✅ 여기부터 "추가" (니 코드에 덧붙임)
@@ -149,85 +158,89 @@ public class SubsidyManageRepository
    */
   public <T> SelectQuery<T> selectCalcRowsWithSupportAmount(Class<T> type, String year) {
 
-    QClubInfo ci = QClubInfo.clubInfo;
-    QClubUserInfo cui = QClubUserInfo.clubUserInfo;
-    QCoEmplBas ceb = QCoEmplBas.coEmplBas;
+	  QClubInfo ci = QClubInfo.clubInfo;
+	  QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+	  QCoEmplBas ceb = QCoEmplBas.coEmplBas;
 
-    QClubApplyFeeRuleBas bas = QClubApplyFeeRuleBas.clubApplyFeeRuleBas;
-    QClubApplyFeeRuleDetail det = QClubApplyFeeRuleDetail.clubApplyFeeRuleDetail;
+	  QClubApplyFeeRuleBas bas = QClubApplyFeeRuleBas.clubApplyFeeRuleBas;
+	  QClubApplyFeeRuleDetail det = QClubApplyFeeRuleDetail.clubApplyFeeRuleDetail;
 
-    var leaderExpr = Expressions.stringTemplate(
-        "coalesce({0} || ' ' || {1}, '미상')",
-        ceb.nameKo, ceb.positionCd
-    );
+	  QClubGwInfo gw = QClubGwInfo.clubGwInfo; // ✅ 추가
 
-    var memberCntLong = cui.clubUserId.count();
-    var memberCntInt = memberCntLong.intValue();
+	  var leaderExpr = Expressions.stringTemplate(
+	      "coalesce({0} || ' ' || {1}, '미상')",
+	      ceb.nameKo, ceb.positionCd
+	  );
 
-    int y = Integer.parseInt(year.trim());
+	  var memberCntLong = cui.clubUserId.count();
+	  var memberCntInt = memberCntLong.intValue();
 
-    // ✅ year 기준일(예: 2025-12-31) - 규정 적용 판단용
-    LocalDate base = LocalDate.of(y, 12, 31);
-    var baseDate = Expressions.dateTemplate(LocalDate.class, "{0}", base);
+	  int y = Integer.parseInt(year.trim());
 
-    // ✅ 동호회 생성일 컷: (year+1)-01-01 00:00:00 이전에 생성된 동호회만 포함
-    LocalDateTime nextYearStart = LocalDateTime.of(y + 1, 1, 1, 0, 0, 0);
-    var nextYearStartExpr = Expressions.dateTimeTemplate(LocalDateTime.class, "{0}", nextYearStart);
+	  LocalDate base = LocalDate.of(y, 12, 31);
+	  var baseDate = Expressions.dateTemplate(LocalDate.class, "{0}", base);
 
-    // ✅ 그 기준일에 “적용중”인 applyId
-    var currentApplyId =
-        JPAExpressions
-            .select(bas.applyId)
-            .from(bas)
-            .where(
-                bas.useYn.eq("Y"),
-                bas.applyStartDt.loe(baseDate),
-                bas.applyEndDt.isNull().or(bas.applyEndDt.goe(baseDate))
-            )
-            .orderBy(bas.applyId.desc())
-            .limit(1);
+	  LocalDateTime nextYearStart = LocalDateTime.of(y + 1, 1, 1, 0, 0, 0);
+	  var nextYearStartExpr = Expressions.dateTimeTemplate(LocalDateTime.class, "{0}", nextYearStart);
 
-    // ✅ 회원수 구간 매칭 payAmount
-    var payAmountSub =
-        JPAExpressions
-            .select(det.payAmount)
-            .from(det)
-            .where(
-                det.applyId.eq(currentApplyId),
-                memberCntLong.goe(det.memberCntFrom.longValue()),
-                det.memberCntTo.isNull().or(memberCntLong.loe(det.memberCntTo.longValue()))
-            )
-            .limit(1);
+	  // ✅ GW 승인(A) 존재 조건
+	  var gwApprovedExists =
+	      JPAExpressions.selectOne()
+	          .from(gw)
+	          .where(
+	              gw.clubId.eq(ci.clubId),
+	              gw.status.eq("A")
+	          )
+	          .exists();
 
-    var supportAmountExpr =
-        Expressions.numberTemplate(Integer.class, "coalesce({0}, 0)", payAmountSub);
+	  var currentApplyId =
+	      JPAExpressions
+	          .select(bas.applyId)
+	          .from(bas)
+	          .where(
+	              bas.useYn.eq("Y"),
+	              bas.applyStartDt.loe(baseDate),
+	              bas.applyEndDt.isNull().or(bas.applyEndDt.goe(baseDate))
+	          )
+	          .orderBy(bas.applyId.desc())
+	          .limit(1);
 
-    return new SelectQuery<>(
-        queryFactory
-            .select(Projections.constructor(
-                type,
-                ci.clubId,
-                ci.clubNm,
-                leaderExpr,
-                memberCntInt,
-                supportAmountExpr,
-                Expressions.constant("N")
-            ))
-            .from(ci)
-            .leftJoin(cui).on(
-                ci.clubId.eq(cui.clubId).and(cui.status.eq("10"))
-            )
-            .leftJoin(ceb).on(
-                ceb.empNo.eq(ci.clubMasterId).and(ceb.deleteAt.ne("Y"))
-            )
-            .where(
-                ci.status.eq("30"),
+	  var payAmountSub =
+	      JPAExpressions
+	          .select(det.payAmount)
+	          .from(det)
+	          .where(
+	              det.applyId.eq(currentApplyId),
+	              memberCntLong.goe(det.memberCntFrom.longValue()),
+	              det.memberCntTo.isNull().or(memberCntLong.loe(det.memberCntTo.longValue()))
+	          )
+	          .limit(1);
 
-                // ✅ 추가된 조건: 동호회 생성일 기준으로 year 산출 제외
-                ci.createDate.lt(nextYearStartExpr)
-            )
-            .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
-            .orderBy(ci.clubNm.asc())
-    );
+	  var supportAmountExpr =
+	      Expressions.numberTemplate(Integer.class, "coalesce({0}, 0)", payAmountSub);
+
+	  return new SelectQuery<>(
+	      queryFactory
+	          .select(Projections.constructor(
+	              type,
+	              ci.clubId,
+	              ci.clubNm,
+	              leaderExpr,
+	              memberCntInt,
+	              supportAmountExpr,
+	              Expressions.constant("N")
+	          ))
+	          .from(ci)
+	          .leftJoin(cui).on(ci.clubId.eq(cui.clubId).and(cui.status.eq("10")))
+	          .leftJoin(ceb).on(ceb.empNo.eq(ci.clubMasterId).and(ceb.deleteAt.ne("Y")))
+	          .where(
+	              ci.status.eq("30"),
+	              gwApprovedExists,                 // ✅ 여기 추가
+	              ci.createDate.lt(nextYearStartExpr)
+	          )
+	          .groupBy(ci.clubId, ci.clubNm, ceb.nameKo, ceb.positionCd)
+	          .orderBy(ci.clubNm.asc())
+	  );
+
   }
 }
