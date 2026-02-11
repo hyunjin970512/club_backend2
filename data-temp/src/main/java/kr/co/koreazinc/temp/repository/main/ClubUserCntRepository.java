@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import kr.co.koreazinc.data.repository.AbstractJpaRepository;
 import kr.co.koreazinc.data.support.Query;
 import kr.co.koreazinc.temp.model.entity.main.ClubUserInfo;
+import kr.co.koreazinc.temp.model.entity.main.QClubInfo;
 import kr.co.koreazinc.temp.model.entity.main.QClubUserInfo;
 
 @Repository
@@ -45,14 +46,19 @@ public class ClubUserCntRepository extends AbstractJpaRepository<ClubUserInfo, L
 
     /** ✅ 가입 동호회 개수 조회 (status = 'ACTIVE') */
     public int countActiveClubsByEmpNo(String empNo) {
-        QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+    	QClubUserInfo cui = QClubUserInfo.clubUserInfo;
+        QClubInfo ci = QClubInfo.clubInfo;
 
         Long cnt = queryFactory
             .select(cui.count())
             .from(cui)
+            .join(ci).on(
+                ci.clubId.eq(cui.clubId),
+                ci.status.notIn("40", "50")
+            )
             .where(
                 cui.empNo.eq(empNo),
-                cui.status.eq(ACTIVE_STATUS)
+                cui.status.eq(ACTIVE_STATUS) // "10"
             )
             .fetchOne();
 
