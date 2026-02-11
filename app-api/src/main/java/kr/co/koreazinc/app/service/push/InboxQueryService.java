@@ -42,6 +42,14 @@ public class InboxQueryService {
 	}
 	
 	/**
+	 * 전체 읽음 처리
+	 */
+	@Transactional
+	public int markAllRead(String empNo) {
+	  return (int) inboxRepo.markAllAsRead(empNo);
+	}
+	
+	/**
 	 * 읽지 않은 알림 수
 	 */
 	@Transactional(readOnly = true)

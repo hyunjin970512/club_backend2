@@ -120,6 +120,25 @@ public class PushInboxRepository extends AbstractJpaRepository<PushInbox, Long> 
             )
             .execute();
     }
+    
+    /* =========================
+     * ✅ 전체 읽음 처리 (내 것만, N만)
+     * ========================= */
+    @Transactional
+    public long markAllAsRead(String empNo) {
+
+        QPushInbox pi = QPushInbox.pushInbox;
+
+        return queryFactory
+            .update(pi)
+            .set(pi.readYn, PushInbox.READ_Y)
+            .set(pi.readAt, LocalDateTime.now())
+            .where(
+                pi.empNo.eq(empNo),
+                pi.readYn.eq(PushInbox.READ_N)
+            )
+            .execute();
+    }
 
     /* =========================
      * 읽지 않은 알림 수
