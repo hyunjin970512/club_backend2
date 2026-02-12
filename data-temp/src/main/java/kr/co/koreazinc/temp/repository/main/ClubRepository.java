@@ -97,6 +97,29 @@ public class ClubRepository extends AbstractJpaRepository<ClubUserInfo, Long> {
     }
     
     /**
+     * 가입 요청한 동호회 조회
+     * - WHERE cui.emp_no = ?
+     * - AND   cui.status = '10'
+     */
+    public List<Long> selectJoinRequestClubIds(String empNo) {
+        QClubJoinRequest cjr = QClubJoinRequest.clubJoinRequest;
+        QClubInfo ci = QClubInfo.clubInfo;
+        
+        return queryFactory
+            .select(cjr.clubId) // ID 하나만 조회
+            .from(cjr)
+            .join(ci).on(
+                    cjr.clubId.eq(ci.clubId),
+                    ci.status.notIn("40", "50")
+                )
+            .where(
+                    cjr.status.eq("10"),
+                    cjr.requestUser.eq(empNo)
+                )
+            .fetch();
+    }
+    
+    /**
      * 동호회 멤버 목록 조회
      */
     public <T> List<T> selectClubMembers(Class<T> type, Integer clubId) {

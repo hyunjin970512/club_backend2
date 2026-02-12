@@ -74,5 +74,9 @@ public class CurrentUserService {
             .map(JoinedClubDto.Get::getClubId)
             .toList();
     }
+    
+    public List<Long> getJoinRequestClubIds() {
+    	return clubRepository.selectJoinRequestClubIds(this.empNoOrThrow());
+    }
 
 }

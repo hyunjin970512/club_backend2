@@ -19,4 +19,5 @@ public class Meresponse {
   private String conEmail;
   private String proxyEmail;
   private List<Long> joinedClubIds;
+  private List<Long> joinRequestClubIds;
 }

@@ -29,11 +29,14 @@ public class ChkContoller {
 		
 	  // 가입된 동호회 ID 리스트 가져오기
 	  List<Long> joinedClubIds = currentUserService.getJoinedClubIds();
+	  // 가입 요청중인 동호회 ID 리스트 가져오기
+	  List<Long> joinRequestClubIds = currentUserService.getJoinRequestClubIds();
 	  // 기본 유저 정보 가져오기
 	  Meresponse me = chkService.me(principal.getEmpNo());
 
 	  return ApiResponse.ok(me.toBuilder()
 			  				.joinedClubIds(joinedClubIds)
+			  				.joinRequestClubIds(joinRequestClubIds)
 			  				.build());
 	}
 	
