@@ -46,6 +46,16 @@ public class InboxController {
 	}
 	
 	/**
+	 * 전체 읽음 처리
+	 */
+	@PostMapping("/read-all")
+	public Map<String, Object> readAll() {
+	  String empNo = currentUserService.empNoOrThrow();
+	  int updated = inboxQueryService.markAllRead(empNo);
+	  return Map.of("success", true, "updated", updated);
+	}
+	
+	/**
 	 * 읽지 않은 알림 개수
 	*/
 	@GetMapping("/unread-count")
