@@ -526,6 +526,8 @@ public class ClubDetailService {
 	    }
 
 	    StringBuilder xml = new StringBuilder();
+	    String deptName = dto.getDeptCd();
+	    
 	    xml.append("<Document>");
 	    xml.append("<Title>동호회 등록 신청서(").append(dto.getClubName()).append(")</Title>");
 	    xml.append("<Items>");
@@ -536,7 +538,12 @@ public class ClubDetailService {
 	    xml.append("<CreateDate>").append(today).append("</CreateDate>");
 	    xml.append("<MemberCnt>").append(dto.getMemberCnt()).append("명</MemberCnt>");
 	    xml.append("<MemberDept>");
-	    xml.append("대표자소속 : ").append(dto.getDeptCd()).append("팀 / ");
+	    
+	    if (deptName != null && !deptName.endsWith("팀")) {
+	        deptName += "팀";
+	    }
+	    xml.append("대표자소속 : ").append(deptName).append(" / ");
+	    
 	    xml.append("직위 : ").append(dto.getPositionCd()).append(" / ");
 	    xml.append("성명 : ").append(dto.getRequestNm());
 	    xml.append("</MemberDept>");
